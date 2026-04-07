@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest>=8.0
+moto[dynamodb,s3,cognitoidp]>=5.0
+black>=24.0
+ruff>=0.3
