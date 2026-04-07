@@ -1,57 +1,37 @@
 "use client";
+import { useEffect, useState } from "react"; import { useParams } from "next/navigation";
+import Header from "@/components/Header"; import PublicNoteCard from "@/components/PublicNoteCard"; import Spinner from "@/components/ui/Spinner";
+import { profileApi, feedApi } from "@/lib/api"; import { UserProfile, Note } from "@/lib/types";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import Header from "@/components/Header";
-import PublicNoteCard from "@/components/PublicNoteCard";
-import Spinner from "@/components/ui/Spinner";
-import { profileApi, feedApi } from "@/lib/api";
-import { UserProfile, Note } from "@/lib/types";
+const GS = ["var(--g1)","var(--g2)","var(--g3)","var(--g4)","var(--g5)","var(--g6)","var(--g7)","var(--g8)"];
+function pick(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = ((h<<5)-h+s.charCodeAt(i))|0; return GS[Math.abs(h)%GS.length]; }
 
 export default function ProfilePage() {
-  const params = useParams();
-  const userId = params.userId as string;
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    Promise.all([profileApi.get(userId), feedApi.userNotes(userId)])
-      .then(([p, n]) => { setProfile(p); setNotes(n.notes); })
-      .catch((e) => setError(e.message))
-      .finally(() => setIsLoading(false));
-  }, [userId]);
+  const { userId } = useParams() as { userId: string };
+  const [profile, setProfile] = useState<UserProfile|null>(null); const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => { Promise.all([profileApi.get(userId), feedApi.userNotes(userId)]).then(([p,n]) => { setProfile(p); setNotes(n.notes); }).finally(() => setLoading(false)); }, [userId]);
 
   return (
-    <>
-      <Header />
-      <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8">
-        {isLoading ? <Spinner className="mt-16" /> : error ? (
-          <div className="text-center mt-16 p-3 rounded-[var(--radius-md)] text-xs" style={{ background: "var(--red-subtle)", color: "var(--red)" }}>{error}</div>
-        ) : profile ? (
-          <div className="animate-fade-up">
-            <div className="glass p-5 mb-6" style={{ boxShadow: "var(--shadow-sm)" }}>
-              <div className="flex items-start gap-4">
-                <div className="h-14 w-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
-                  style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
-                  {(profile.displayName || "S")[0].toUpperCase()}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight">{profile.displayName || "Student"}</h2>
-                  {profile.university && <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>{profile.university}</p>}
-                  {profile.bio && <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-tertiary)" }}>{profile.bio}</p>}
-                  <p className="text-[10px] mt-2 uppercase tracking-wider font-bold" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>{notes.length} public note{notes.length !== 1 ? "s" : ""}</p>
-                </div>
+    <><Header />
+      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-10">
+        {loading ? <Spinner className="mt-16" /> : profile ? (
+          <div className="up">
+            {/* Profile banner */}
+            <div className="h-32 rounded-t-[var(--r)] relative" style={{ background: pick(profile.userId) }} />
+            <div className="bg-white rounded-b-[var(--r)] border border-t-0 border-[var(--border)] px-6 pb-6 pt-0 mb-8 relative" style={{ boxShadow: "var(--shadow-sm)" }}>
+              <div className="h-20 w-20 rounded-full flex items-center justify-center text-[28px] font-extrabold text-white border-4 border-white absolute -top-10" style={{ background: pick(profile.userId) }}>
+                {(profile.displayName||"S")[0].toUpperCase()}
+              </div>
+              <div className="pt-14">
+                <h1 className="text-[22px] font-extrabold tracking-tight">{profile.displayName || "Student"}</h1>
+                {profile.university && <p className="text-[14px] mt-0.5" style={{ color: "var(--fg3)" }}>{profile.university}</p>}
+                {profile.bio && <p className="text-[14px] mt-2 leading-relaxed" style={{ color: "var(--fg2)" }}>{profile.bio}</p>}
+                <p className="text-[13px] mt-2 font-semibold" style={{ color: "var(--fg4)" }}>{notes.length} public note{notes.length !== 1 ? "s" : ""}</p>
               </div>
             </div>
-
-            {notes.length === 0 ? (
-              <p className="text-sm py-10 text-center" style={{ color: "var(--text-tertiary)" }}>No public notes yet</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {notes.map((n, i) => <PublicNoteCard key={n.noteId} note={n} index={i} />)}
-              </div>
+            {!notes.length ? <p className="text-[14px] py-12 text-center" style={{ color: "var(--fg4)" }}>No public notes yet</p> : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">{notes.map((n,i) => <PublicNoteCard key={n.noteId} note={n} index={i} />)}</div>
             )}
           </div>
         ) : null}

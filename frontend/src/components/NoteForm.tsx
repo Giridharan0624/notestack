@@ -1,198 +1,141 @@
 "use client";
-
 import { FormEvent, useState, useRef, KeyboardEvent } from "react";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
 
-interface NoteFormProps {
-  initialTitle?: string;
-  initialDescription?: string;
-  initialTags?: string[];
-  initialVisibility?: "public" | "private";
-  submitLabel?: string;
-  showFileUpload?: boolean;
-  onSubmit: (data: {
-    title: string;
-    content: string;
-    description: string;
-    tags: string[];
-    visibility: string;
-    file?: File;
-  }) => Promise<void>;
+interface Props {
+  initialTitle?: string; initialDescription?: string; initialTags?: string[]; initialVisibility?: "public" | "private";
+  submitLabel?: string; showFileUpload?: boolean;
+  onSubmit: (d: { title: string; content: string; description: string; tags: string[]; visibility: string; file?: File }) => Promise<void>;
   onCancel?: () => void;
 }
 
-export default function NoteForm({
-  initialTitle = "",
-  initialDescription = "",
-  initialTags = [],
-  initialVisibility = "private",
-  submitLabel = "Save",
-  showFileUpload = false,
-  onSubmit,
-  onCancel,
-}: NoteFormProps) {
+const GRADIENTS = ["var(--g1)","var(--g2)","var(--g3)","var(--g4)","var(--g5)","var(--g6)","var(--g7)","var(--g8)"];
+
+export default function NoteForm({ initialTitle = "", initialDescription = "", initialTags = [], initialVisibility = "private", submitLabel = "Save", showFileUpload = false, onSubmit, onCancel }: Props) {
   const [title, setTitle] = useState(initialTitle);
-  const [description, setDescription] = useState(initialDescription);
+  const [desc, setDesc] = useState(initialDescription);
   const [tags, setTags] = useState<string[]>(initialTags);
-  const [tagInput, setTagInput] = useState("");
-  const [visibility, setVisibility] = useState<"public" | "private">(initialVisibility);
-  const [file, setFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
-  const tagInputRef = useRef<HTMLInputElement>(null);
+  const [tagIn, setTagIn] = useState("");
+  const [vis, setVis] = useState<"public"|"private">(initialVisibility);
+  const [file, setFile] = useState<File|null>(null);
+  const [drag, setDrag] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const fRef = useRef<HTMLInputElement>(null);
+  const tRef = useRef<HTMLInputElement>(null);
 
-  const addTag = (value: string) => {
-    const tag = value.trim().toLowerCase();
-    if (tag && !tags.includes(tag) && tags.length < 10) {
-      setTags([...tags, tag]);
-    }
-    setTagInput("");
-  };
+  const addTag = (v: string) => { const t = v.trim().toLowerCase(); if (t && !tags.includes(t) && tags.length < 10) setTags([...tags, t]); setTagIn(""); };
+  const rmTag = (t: string) => setTags(tags.filter(x => x !== t));
+  const onKey = (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addTag(tagIn); } else if (e.key === "Backspace" && !tagIn && tags.length) rmTag(tags[tags.length-1]); };
 
-  const removeTag = (tag: string) => {
-    setTags(tags.filter((t) => t !== tag));
-  };
-
-  const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      addTag(tagInput);
-    } else if (e.key === "Backspace" && !tagInput && tags.length > 0) {
-      removeTag(tags[tags.length - 1]);
-    }
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
+  const handle = async (e: FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) { setError("Title is required"); return; }
-    if (showFileUpload && !file) { setError("Please select a file to upload"); return; }
-    setError(""); setIsLoading(true);
-    try {
-      await onSubmit({ title, content: "", description, tags, visibility, file: file || undefined });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
-    } finally { setIsLoading(false); }
+    if (!title.trim()) { setErr("Title is required"); return; }
+    if (showFileUpload && !file) { setErr("Select a file"); return; }
+    setErr(""); setLoading(true);
+    try { await onSubmit({ title, content: "", description: desc, tags, visibility: vis, file: file || undefined }); }
+    catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
+    finally { setLoading(false); }
   };
+
+  const inputStyle: React.CSSProperties = { background: "var(--white)", borderColor: "var(--border)", color: "var(--fg)" };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {/* File upload */}
-      {showFileUpload && (
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>File</label>
-          <div
-            onDrop={(e) => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files[0]; if (f) { setFile(f); if (!title) setTitle(f.name.replace(/\.[^/.]+$/, "")); } }}
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onClick={() => fileRef.current?.click()}
-            className="cursor-pointer transition-all rounded-[var(--radius-lg)] py-8 px-4 text-center"
-            style={{
-              border: `2px dashed ${isDragging ? "var(--accent)" : file ? "var(--green)" : "var(--border)"}`,
-              background: isDragging ? "var(--accent-subtle)" : file ? "var(--green-subtle)" : "var(--bg-surface)",
-            }}
-          >
-            {file ? (
-              <div className="flex flex-col items-center gap-2">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ color: "var(--green)" }}>
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M14 2v6h6M9 15l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{file.name}</p>
-                <p className="text-[10px]" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>{(file.size / 1024 / 1024).toFixed(1)} MB</p>
-                <button type="button" className="text-[10px] font-bold uppercase tracking-wider cursor-pointer" style={{ color: "var(--text-tertiary)" }}
-                  onClick={(e) => { e.stopPropagation(); setFile(null); }}>Change file</button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-2">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style={{ color: isDragging ? "var(--accent)" : "var(--text-tertiary)" }}>
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Drop your file here or <span style={{ color: "var(--accent)" }}>browse</span></p>
-                <p className="text-[10px]" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>PDF, images, documents · max 10MB</p>
-              </div>
-            )}
-            <input ref={fileRef} type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.xls,.xlsx,.txt"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) { setFile(f); if (!title) setTitle(f.name.replace(/\.[^/.]+$/, "")); } e.target.value = ""; }} />
+    <form onSubmit={handle} className="flex flex-col gap-3.5">
+      {/* Row 1: File upload (left) + Title & Description (right) */}
+      {showFileUpload ? (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col">
+            <label className="text-[13px] font-semibold block mb-1.5" style={{ color: "var(--fg2)" }}>File</label>
+            <div onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) { setFile(f); if (!title) setTitle(f.name.replace(/\.[^/.]+$/,"")); } }}
+              onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
+              onClick={() => fRef.current?.click()}
+              className="cursor-pointer rounded-[var(--r)] px-4 text-center border-2 border-dashed transition-all flex-1 flex items-center justify-center"
+              style={{ borderColor: drag ? "var(--blue)" : file ? "var(--green)" : "var(--border)", background: drag ? "rgba(79,110,247,0.04)" : file ? "rgba(16,185,129,0.04)" : "var(--white)" }}>
+              {file ? (
+                <div className="flex flex-col items-center gap-1 py-3">
+                  <div className="h-10 w-10 rounded-[10px] flex items-center justify-center text-[12px] font-extrabold text-white" style={{ background: GRADIENTS[Math.abs(file.name.length) % 8] }}>{file.name.split(".").pop()?.toUpperCase().slice(0,3)}</div>
+                  <p className="text-[13px] font-semibold truncate max-w-full">{file.name}</p>
+                  <p className="text-[11px]" style={{ color: "var(--fg3)" }}>{(file.size/1048576).toFixed(1)} MB</p>
+                  <button type="button" className="text-[11px] font-semibold cursor-pointer" style={{ color: "var(--blue)" }} onClick={(e) => { e.stopPropagation(); setFile(null); }}>Change</button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-1 py-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ color: "var(--fg3)" }}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <p className="text-[13px] font-medium" style={{ color: "var(--fg2)" }}>Drop or <span style={{ color: "var(--blue)" }}>browse</span></p>
+                  <p className="text-[11px]" style={{ color: "var(--fg4)" }}>PDF, images, docs · 10MB</p>
+                </div>
+              )}
+              <input ref={fRef} type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.xls,.xlsx,.txt"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) { setFile(f); if (!title) setTitle(f.name.replace(/\.[^/.]+$/,"")); } e.target.value = ""; }} />
+            </div>
+          </div>
+          <div className="flex flex-col gap-3">
+            <Input id="title" label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Note title" required />
+            <div className="flex-1 flex flex-col">
+              <label className="text-[13px] font-semibold block mb-1.5" style={{ color: "var(--fg2)" }}>Description</label>
+              <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="What's in this note?" maxLength={200}
+                className="w-full flex-1 px-4 py-2.5 text-[14px] rounded-[var(--r-sm)] border-2 outline-none resize-none placeholder:text-[var(--fg4)] transition-all"
+                style={inputStyle}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--blue)"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(79,110,247,0.1)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }} />
+              <p className="text-[11px] mt-0.5" style={{ color: "var(--fg4)" }}>{desc.length}/200</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <Input id="title" label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Note title" required />
+          <div>
+            <label className="text-[13px] font-semibold block mb-1.5" style={{ color: "var(--fg2)" }}>Description</label>
+            <textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="What's in this note?" maxLength={200} rows={1}
+              className="w-full px-4 py-2.5 text-[14px] rounded-[var(--r-sm)] border-2 outline-none resize-none placeholder:text-[var(--fg4)] transition-all"
+              style={inputStyle}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--blue)"; e.currentTarget.style.boxShadow = "0 0 0 4px rgba(79,110,247,0.1)"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }} />
+            <p className="text-[11px] mt-0.5" style={{ color: "var(--fg4)" }}>{desc.length}/200</p>
           </div>
         </div>
       )}
 
-      <Input id="title" label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Note title" required />
+      {/* Row 2: Tags + Visibility */}
+      <div className="grid grid-cols-2 gap-4 items-start">
+        <div>
+          <label className="text-[13px] font-semibold block mb-1.5" style={{ color: "var(--fg2)" }}>Tags</label>
+          <div className="flex flex-wrap items-center gap-1.5 px-3 py-[9px] rounded-[var(--r-sm)] border-2 cursor-text transition-all"
+            style={{ background: "var(--white)", borderColor: "var(--border)" }} onClick={() => tRef.current?.focus()}>
+            {tags.map(t => (
+              <span key={t} className="inline-flex items-center gap-1 text-[12px] font-semibold px-2.5 py-0.5 rounded-full" style={{ background: "rgba(79,110,247,0.08)", color: "var(--blue)" }}>
+                {t}<button type="button" className="cursor-pointer hover:opacity-60" onClick={(e) => { e.stopPropagation(); rmTag(t); }}>×</button>
+              </span>
+            ))}
+            <input ref={tRef} value={tagIn} onChange={(e) => setTagIn(e.target.value)} onKeyDown={onKey} onBlur={() => { if (tagIn) addTag(tagIn); }}
+              placeholder={!tags.length ? "calculus, midterm..." : ""} disabled={tags.length >= 10}
+              className="flex-1 min-w-[60px] text-[13px] bg-transparent border-none outline-none placeholder:text-[var(--fg4)]" style={{ color: "var(--fg)" }} />
+          </div>
+          <p className="text-[11px] mt-0.5" style={{ color: "var(--fg4)" }}>Enter to add · {tags.length}/10</p>
+        </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What's in this note? Help others find it..." maxLength={200} rows={2}
-          className="w-full px-3.5 py-2.5 text-sm rounded-[var(--radius-md)] border transition-all focus:outline-none placeholder:text-[var(--text-tertiary)] resize-y"
-          style={{ background: "var(--bg-surface)", borderColor: "var(--border)", color: "var(--text-primary)" }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.boxShadow = "0 0 0 2px var(--accent-subtle)"; }}
-          onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
-        />
-        <span className="text-[10px]" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>{description.length}/200</span>
-      </div>
-
-      {/* Tags input */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>Tags</label>
-        <div
-          className="flex flex-wrap items-center gap-1.5 px-3 py-2 rounded-[var(--radius-md)] border transition-all cursor-text"
-          style={{ background: "var(--bg-surface)", borderColor: "var(--border)", minHeight: "42px" }}
-          onClick={() => tagInputRef.current?.focus()}
-        >
-          {tags.map((tag) => (
-            <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
-              style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
-              {tag}
-              <button type="button" onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
-                className="cursor-pointer hover:opacity-70" style={{ color: "var(--accent)" }}>
-                <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+        <div>
+          <label className="text-[13px] font-semibold block mb-1.5" style={{ color: "var(--fg2)" }}>Visibility</label>
+          <div className="flex rounded-[var(--r-sm)] overflow-hidden border-2" style={{ borderColor: "var(--border)" }}>
+            {(["private","public"] as const).map(v => (
+              <button key={v} type="button" onClick={() => setVis(v)}
+                className="flex-1 py-[9px] text-[13px] font-semibold cursor-pointer transition-all"
+                style={{ background: vis === v ? (v === "public" ? "rgba(16,185,129,0.08)" : "var(--hover)") : "var(--white)", color: vis === v ? (v === "public" ? "var(--green)" : "var(--fg)") : "var(--fg4)" }}>
+                {v === "public" ? "🌍 Public" : "🔒 Private"}
               </button>
-            </span>
-          ))}
-          <input
-            ref={tagInputRef}
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={handleTagKeyDown}
-            onBlur={() => { if (tagInput) addTag(tagInput); }}
-            placeholder={tags.length === 0 ? "e.g. calculus, midterm, chapter-5" : tags.length < 10 ? "Add tag..." : ""}
-            disabled={tags.length >= 10}
-            className="flex-1 min-w-[100px] text-sm bg-transparent border-none outline-none placeholder:text-[var(--text-tertiary)]"
-            style={{ color: "var(--text-primary)" }}
-          />
-        </div>
-        <span className="text-[10px]" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>
-          press enter or comma to add · {tags.length}/10
-        </span>
-      </div>
-
-      {/* Visibility */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>Visibility</label>
-        <div className="flex rounded-[var(--radius-md)] overflow-hidden border" style={{ borderColor: "var(--border)" }}>
-          {(["private", "public"] as const).map((v) => (
-            <button key={v} type="button" onClick={() => setVisibility(v)}
-              className="flex-1 py-2.5 text-xs font-bold uppercase tracking-wider cursor-pointer transition-all"
-              style={{
-                background: visibility === v ? (v === "public" ? "var(--green-subtle)" : "var(--bg-overlay)") : "var(--bg-surface)",
-                color: visibility === v ? (v === "public" ? "var(--green)" : "var(--text-primary)") : "var(--text-tertiary)",
-                fontFamily: "var(--font-mono)",
-              }}>
-              {v}
-            </button>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
-      {error && <div className="text-xs px-3 py-2 rounded-[var(--radius-sm)]" style={{ background: "var(--red-subtle)", color: "var(--red)" }}>{error}</div>}
+      {err && <p className="text-[12px] font-medium" style={{ color: "var(--red)" }}>{err}</p>}
 
       <div className="flex gap-2 justify-end pt-1">
-        {onCancel && <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>}
-        <Button type="submit" isLoading={isLoading}>
-          {showFileUpload && <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-          {submitLabel}
-        </Button>
+        {onCancel && <Button variant="secondary" onClick={onCancel}>Cancel</Button>}
+        <Button isLoading={loading}>{submitLabel}</Button>
       </div>
     </form>
   );

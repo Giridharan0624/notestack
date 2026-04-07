@@ -1,42 +1,21 @@
 "use client";
-
-import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import AuthForm from "@/components/AuthForm";
-import Link from "next/link";
+import { useAuth } from "@/context/AuthContext"; import { useRouter } from "next/navigation"; import { useEffect } from "react";
+import AuthForm from "@/components/AuthForm"; import Link from "next/link";
 
 export default function SignupPage() {
-  const { isAuthenticated, isLoading, signup, confirmSignup } = useAuth();
-  const router = useRouter();
-
+  const { isAuthenticated, isLoading, signup, confirmSignup } = useAuth(); const router = useRouter();
   useEffect(() => { if (!isLoading && isAuthenticated) router.replace("/dashboard"); }, [isAuthenticated, isLoading, router]);
-
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full opacity-20 blur-[120px]" style={{ background: "var(--accent)" }} />
-      <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full opacity-10 blur-[100px]" style={{ background: "var(--pink)" }} />
-
-      <div className="mb-8 flex items-center gap-2.5 animate-fade-up">
-        <div className="h-9 w-9 rounded-[var(--radius-md)] flex items-center justify-center text-sm font-bold" style={{ background: "var(--accent-gradient)", color: "white" }}>N</div>
-        <span className="text-lg font-bold tracking-tight">NoteStack</span>
-      </div>
-
-      <div className="w-full max-w-md glass p-7" style={{ boxShadow: "var(--shadow-lg)" }}>
-        <AuthForm
-          title="Join NoteStack"
-          subtitle="Start sharing notes with classmates"
-          submitLabel="Create account"
-          onSubmit={async (email, password) => { await signup(email, password); }}
-          showConfirmation
-          onConfirm={async (email, code) => { await confirmSignup(email, code); router.push("/login"); }}
-          footer={
-            <p className="text-sm text-center" style={{ color: "var(--text-tertiary)" }}>
-              Already have an account?{" "}
-              <Link href="/login" className="font-medium" style={{ color: "var(--accent)" }}>Sign in</Link>
-            </p>
-          }
-        />
+    <div className="flex-1 flex items-center justify-center p-6">
+      <div className="w-full max-w-[400px]">
+        <div className="flex items-center gap-2.5 mb-10">
+          <div className="h-9 w-9 rounded-[10px] flex items-center justify-center text-[14px] font-extrabold text-white" style={{ background: "var(--g2)" }}>N</div>
+          <span className="text-[18px] font-extrabold tracking-tight">NoteStack</span>
+        </div>
+        <AuthForm title="Create account" subtitle="Join thousands of students sharing notes" submitLabel="Sign up"
+          onSubmit={async (e, p) => { await signup(e, p); }} showConfirmation
+          onConfirm={async (e, c) => { await confirmSignup(e, c); router.push("/login"); }}
+          footer={<p className="text-[13px] text-center" style={{ color: "var(--fg3)" }}>Already have an account? <Link href="/login" className="font-semibold" style={{ color: "var(--blue)" }}>Sign in</Link></p>} />
       </div>
     </div>
   );
