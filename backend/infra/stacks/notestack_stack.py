@@ -116,7 +116,7 @@ class NoteStackStack(Stack):
             "NoteFn",
             function_name="notestack-note",
             handler="contexts.note.interfaces.handlers.handler",
-            code=_lambda.Code.from_asset(".."),
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "local_server.py", ".pytest_cache", "__pycache__"]),
             **lambda_defaults,
         )
 
@@ -125,7 +125,7 @@ class NoteStackStack(Stack):
             "UploadFn",
             function_name="notestack-upload",
             handler="contexts.upload.interfaces.handlers.handler",
-            code=_lambda.Code.from_asset(".."),
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "local_server.py", ".pytest_cache", "__pycache__"]),
             **lambda_defaults,
         )
 
@@ -134,21 +134,21 @@ class NoteStackStack(Stack):
             "AttachmentFn",
             function_name="notestack-attachment",
             handler="contexts.attachment.interfaces.handlers.handler",
-            code=_lambda.Code.from_asset(".."),
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "local_server.py", ".pytest_cache", "__pycache__"]),
             **lambda_defaults,
         )
 
+        user_env = {**lambda_defaults["environment"], "USER_POOL_ID": user_pool.user_pool_id}
         user_fn = _lambda.Function(
             self,
             "UserFn",
             function_name="notestack-user",
             handler="contexts.user.interfaces.handlers.handler",
-            code=_lambda.Code.from_asset(".."),
-            **lambda_defaults,
-            environment={
-                **lambda_defaults["environment"],
-                "USER_POOL_ID": user_pool.user_pool_id,
-            },
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "local_server.py", ".pytest_cache", "__pycache__"]),
+            runtime=lambda_defaults["runtime"],
+            timeout=lambda_defaults["timeout"],
+            memory_size=lambda_defaults["memory_size"],
+            environment=user_env,
         )
 
         # IAM permissions
