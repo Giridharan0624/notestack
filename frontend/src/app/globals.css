@@ -79,3 +79,18 @@ body {
 .d1{animation-delay:.04s}.d2{animation-delay:.08s}.d3{animation-delay:.12s}.d4{animation-delay:.16s}
 .d5{animation-delay:.2s}.d6{animation-delay:.24s}.d7{animation-delay:.28s}.d8{animation-delay:.32s}
 .d9{animation-delay:.36s}.d10{animation-delay:.4s}.d11{animation-delay:.44s}.d12{animation-delay:.48s}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .up { animation-duration: 0.3s; }
+  h1 { font-size: 22px !important; }
+}
+
+/* Toast notification */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 100;
+  padding: 12px 20px; border-radius: var(--r); font-size: 13px; font-weight: 600;
+  box-shadow: var(--shadow-lg); animation: up 0.3s ease both;
+}
+.toast-success { background: var(--green); color: white; }
+.toast-error { background: var(--red); color: white; }

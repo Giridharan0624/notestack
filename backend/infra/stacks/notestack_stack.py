@@ -188,11 +188,38 @@ class NoteStackStack(Stack):
             **lambda_defaults,
         )
 
+        social_fn = _lambda.Function(
+            self,
+            "SocialFn",
+            function_name="notestack-social",
+            handler="contexts.social.interfaces.handlers.handler",
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "lambda_layer", "local_server.py", ".pytest_cache", "__pycache__", "*.dist-info"]),
+            **lambda_defaults,
+        )
+
+        sharing_fn = _lambda.Function(
+            self, "SharingFn", function_name="notestack-sharing",
+            handler="contexts.sharing.interfaces.handlers.handler",
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "lambda_layer", "local_server.py", ".pytest_cache", "__pycache__", "*.dist-info"]),
+            **lambda_defaults,
+        )
+
+        groups_fn = _lambda.Function(
+            self, "GroupsFn", function_name="notestack-groups",
+            handler="contexts.groups.interfaces.handlers.handler",
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "lambda_layer", "local_server.py", ".pytest_cache", "__pycache__", "*.dist-info"]),
+            **lambda_defaults,
+        )
+
         # IAM permissions
         table.grant_read_write_data(note_fn)
         table.grant_read_write_data(attachment_fn)
         table.grant_read_write_data(profile_fn)
+        table.grant_read_write_data(social_fn)
+        table.grant_read_write_data(sharing_fn)
+        table.grant_read_write_data(groups_fn)
         table.grant_read_data(feed_fn)
+        bucket.grant_put(profile_fn)
         bucket.grant_put(upload_fn)
         bucket.grant_read(attachment_fn)
         bucket.grant_put(attachment_fn)
@@ -219,6 +246,10 @@ class NoteStackStack(Stack):
                 allow_origins=apigw.Cors.ALL_ORIGINS,
                 allow_methods=apigw.Cors.ALL_METHODS,
                 allow_headers=["Content-Type", "Authorization"],
+            ),
+            deploy_options=apigw.StageOptions(
+                throttling_rate_limit=100,
+                throttling_burst_limit=200,
             ),
         )
 
@@ -304,6 +335,14 @@ class NoteStackStack(Stack):
             authorizer=authorizer,
         )
 
+        download_resource = attachment_id_resource.add_resource("download")
+        download_resource.add_method(
+            "GET",
+            apigw.LambdaIntegration(attachment_fn),
+            authorization_type=apigw.AuthorizationType.COGNITO,
+            authorizer=authorizer,
+        )
+
         # Feed routes (public — no authorizer)
         feed_resource = api.root.add_resource("feed")
         feed_resource.add_method("GET", apigw.LambdaIntegration(feed_fn))
@@ -335,10 +374,101 @@ class NoteStackStack(Stack):
             authorizer=authorizer,
         )
 
+        # Avatar routes (authenticated)
+        me_avatar_url_resource = me_resource.add_resource("avatar-upload-url")
+        me_avatar_url_resource.add_method(
+            "POST",
+            apigw.LambdaIntegration(profile_fn),
+            authorization_type=apigw.AuthorizationType.COGNITO,
+            authorizer=authorizer,
+        )
+        me_avatar_resource = me_resource.add_resource("avatar")
+        me_avatar_resource.add_method(
+            "PUT",
+            apigw.LambdaIntegration(profile_fn),
+            authorization_type=apigw.AuthorizationType.COGNITO,
+            authorizer=authorizer,
+        )
+
+        # Username lookup (public)
+        u_resource = api.root.add_resource("u")
+        u_username_resource = u_resource.add_resource("{username}")
+        u_username_resource.add_method("GET", apigw.LambdaIntegration(profile_fn))
+
+        # Stats route (public)
+        user_stats_resource = user_id_resource.add_resource("stats")
+        user_stats_resource.add_method("GET", apigw.LambdaIntegration(profile_fn))
+
+        # Social routes — follow
+        follow_resource = user_id_resource.add_resource("follow")
+        follow_resource.add_method("POST", apigw.LambdaIntegration(social_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+        follow_resource.add_method("DELETE", apigw.LambdaIntegration(social_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        followers_resource = user_id_resource.add_resource("followers")
+        followers_resource.add_method("GET", apigw.LambdaIntegration(social_fn))
+
+        following_resource = user_id_resource.add_resource("following")
+        following_resource.add_method("GET", apigw.LambdaIntegration(social_fn))
+
+        # Social routes — like & bookmark (under notes/{id})
+        like_resource = note_id_resource.add_resource("like")
+        like_resource.add_method("POST", apigw.LambdaIntegration(social_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+        like_resource.add_method("DELETE", apigw.LambdaIntegration(social_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        bookmark_resource = note_id_resource.add_resource("bookmark")
+        bookmark_resource.add_method("POST", apigw.LambdaIntegration(social_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+        bookmark_resource.add_method("DELETE", apigw.LambdaIntegration(social_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        # Social routes — bookmarks & status (under /me)
+        me_bookmarks_resource = me_resource.add_resource("bookmarks")
+        me_bookmarks_resource.add_method("GET", apigw.LambdaIntegration(social_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        me_social_status_resource = me_resource.add_resource("social-status")
+        me_social_status_resource.add_method("GET", apigw.LambdaIntegration(social_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        # Sharing routes — note share
+        share_resource = note_id_resource.add_resource("share")
+        share_resource.add_method("POST", apigw.LambdaIntegration(sharing_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        # Sharing routes — notifications (under /me)
+        me_notifications_resource = me_resource.add_resource("notifications")
+        me_notifications_resource.add_method("GET", apigw.LambdaIntegration(sharing_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        me_notif_unread_resource = me_notifications_resource.add_resource("unread-count")
+        me_notif_unread_resource.add_method("GET", apigw.LambdaIntegration(sharing_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        me_notif_id_resource = me_notifications_resource.add_resource("{shareId}")
+        me_notif_read_resource = me_notif_id_resource.add_resource("read")
+        me_notif_read_resource.add_method("PUT", apigw.LambdaIntegration(sharing_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        # User search (under /users)
+        users_search_resource = users_resource.add_resource("search")
+        users_search_resource.add_method("GET", apigw.LambdaIntegration(profile_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        # Groups routes
+        groups_resource = api.root.add_resource("groups")
+        groups_resource.add_method("POST", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        me_groups_resource = me_resource.add_resource("groups")
+        me_groups_resource.add_method("GET", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        group_id_resource = groups_resource.add_resource("{groupId}")
+        group_id_resource.add_method("GET", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+        group_id_resource.add_method("DELETE", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        group_members_resource = group_id_resource.add_resource("members")
+        group_members_resource.add_method("POST", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        group_member_id_resource = group_members_resource.add_resource("{userId}")
+        group_member_id_resource.add_method("DELETE", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        group_notes_resource = group_id_resource.add_resource("notes")
+        group_notes_resource.add_method("POST", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
         # ──────────────────────────────────────────────
         # CloudWatch Alarms
         # ──────────────────────────────────────────────
-        for fn_name, fn in [("user", user_fn), ("note", note_fn), ("upload", upload_fn), ("attachment", attachment_fn), ("profile", profile_fn), ("feed", feed_fn)]:
+        for fn_name, fn in [("user", user_fn), ("note", note_fn), ("upload", upload_fn), ("attachment", attachment_fn), ("profile", profile_fn), ("feed", feed_fn), ("social", social_fn), ("sharing", sharing_fn), ("groups", groups_fn)]:
             cloudwatch.Alarm(
                 self,
                 f"{fn_name.capitalize()}ErrorAlarm",

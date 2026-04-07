@@ -29,9 +29,13 @@ export function useProfile(userId?: string) {
   }, [fetchProfile]);
 
   const updateProfile = async (data: {
+    username?: string;
     displayName?: string;
     university?: string;
     bio?: string;
+    yearOfStudy?: string;
+    major?: string;
+    socialLinks?: Record<string, string>;
   }) => {
     const updated = await profileApi.update(data);
     setProfile(updated);

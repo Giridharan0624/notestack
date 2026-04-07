@@ -18,6 +18,7 @@ def handler(event, context):
     routes = {
         ("POST", "/notes/{id}/attachments"): create_attachment,
         ("GET", "/notes/{id}/attachments"): list_attachments,
+        ("GET", "/notes/{id}/attachments/{attachmentId}/download"): get_download_url,
         ("DELETE", "/notes/{id}/attachments/{attachmentId}"): delete_attachment,
     }
 
@@ -56,3 +57,10 @@ def delete_attachment(event, user_id, body, path_params, query_params):
     use_case = DeleteAttachmentUseCase(repo, s3_service)
     use_case.execute(user_id=user_id, attachment_id=path_params.get("attachmentId", ""))
     return success_response({"message": "Attachment deleted"})
+
+
+@lambda_handler
+def get_download_url(event, user_id, body, path_params, query_params):
+    use_case = GetDownloadUrlUseCase(repo, s3_service)
+    result = use_case.execute(user_id=user_id, attachment_id=path_params.get("attachmentId", ""))
+    return success_response(result)

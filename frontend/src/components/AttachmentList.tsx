@@ -1,13 +1,23 @@
 "use client";
 import { Attachment } from "@/lib/types";
+import { attachmentsApi } from "@/lib/api";
 
 const GRADIENTS = ["var(--g1)", "var(--g2)", "var(--g3)", "var(--g4)", "var(--g5)", "var(--g6)", "var(--g7)", "var(--g8)"];
 function pick(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0; return GRADIENTS[Math.abs(h) % GRADIENTS.length]; }
 function fmtSize(b: number) { if (b < 1024) return `${b}B`; if (b < 1048576) return `${(b/1024).toFixed(1)}KB`; return `${(b/1048576).toFixed(1)}MB`; }
 function fmtType(t: string) { if (t === "application/pdf") return "PDF"; if (t.startsWith("image/")) return "IMG"; if (t.includes("word")) return "DOC"; return "FILE"; }
 
-export default function AttachmentList({ attachments, onDelete }: { attachments: Attachment[]; onDelete: (id: string) => void }) {
+export default function AttachmentList({ attachments, onDelete, noteId }: { attachments: Attachment[]; onDelete: (id: string) => void; noteId?: string }) {
   if (!attachments.length) return null;
+
+  const handleDownload = async (a: Attachment) => {
+    if (!noteId) return;
+    try {
+      const { downloadUrl } = await attachmentsApi.getDownloadUrl(noteId, a.attachmentId);
+      window.open(downloadUrl, "_blank");
+    } catch {}
+  };
+
   return (
     <div className="space-y-2">
       {attachments.map((a) => (
@@ -19,11 +29,20 @@ export default function AttachmentList({ attachments, onDelete }: { attachments:
             <p className="text-[14px] font-semibold truncate">{a.fileName}</p>
             <p className="text-[12px]" style={{ color: "var(--fg4)" }}>{fmtSize(a.fileSize)}</p>
           </div>
-          <button onClick={() => onDelete(a.attachmentId)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-[12px] font-semibold px-3 py-1 rounded-[8px] cursor-pointer"
-            style={{ background: "#fef2f2", color: "var(--red)" }}>
-            Remove
-          </button>
+          <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            {noteId && (
+              <button onClick={() => handleDownload(a)}
+                className="text-[12px] font-semibold px-3 py-1 rounded-[8px] cursor-pointer"
+                style={{ background: "rgba(79,110,247,0.08)", color: "var(--blue)" }}>
+                Download
+              </button>
+            )}
+            <button onClick={() => onDelete(a.attachmentId)}
+              className="text-[12px] font-semibold px-3 py-1 rounded-[8px] cursor-pointer"
+              style={{ background: "#fef2f2", color: "var(--red)" }}>
+              Remove
+            </button>
+          </div>
         </div>
       ))}
     </div>

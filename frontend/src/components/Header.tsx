@@ -2,6 +2,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import Button from "./ui/Button";
+import NotificationBell from "./NotificationBell";
 import Link from "next/link";
 
 export default function Header() {
@@ -24,11 +25,12 @@ export default function Header() {
             <div className="h-8 w-8 rounded-[10px] flex items-center justify-center text-[13px] font-extrabold text-white" style={{ background: "var(--g1)" }}>N</div>
             <span className="text-[17px] font-extrabold tracking-tight hidden sm:block">NoteStack</span>
           </Link>
-          <nav className="flex items-center gap-1">{nav("/explore", "Explore")}{isAuthenticated && nav("/dashboard", "My Notes")}</nav>
+          <nav className="flex items-center gap-1">{nav("/explore", "Explore")}{isAuthenticated && nav("/dashboard", "My Notes")}{isAuthenticated && nav("/groups", "Groups")}{isAuthenticated && nav("/saved", "Saved")}</nav>
         </div>
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <>
+              <NotificationBell />
               <Button variant="ghost" size="sm" onClick={() => router.push("/profile/edit")}>Profile</Button>
               <Button variant="ghost" size="sm" onClick={() => { logout(); router.replace("/login"); }}>Sign out</Button>
             </>

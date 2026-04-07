@@ -14,7 +14,7 @@ export default function LoginPage() {
         </div>
         <AuthForm title="Welcome back" subtitle="Sign in to continue sharing notes" submitLabel="Sign in"
           onSubmit={async (e, p) => { await login(e, p); router.push("/dashboard"); }}
-          footer={<p className="text-[13px] text-center" style={{ color: "var(--fg3)" }}>No account? <Link href="/signup" className="font-semibold" style={{ color: "var(--blue)" }}>Sign up free</Link></p>} />
+          footer={<div className="space-y-2"><p className="text-[13px] text-center" style={{ color: "var(--fg3)" }}>No account? <Link href="/signup" className="font-semibold" style={{ color: "var(--blue)" }}>Sign up free</Link></p><p className="text-[13px] text-center"><Link href="/forgot-password" className="font-medium" style={{ color: "var(--fg4)" }}>Forgot password?</Link></p></div>} />
       </div>
     </div>
   );

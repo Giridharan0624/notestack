@@ -29,7 +29,7 @@ export default function NoteDetailPage() {
 
             <div className="bg-white rounded-[var(--r)] p-6 border border-[var(--border)]" style={{ boxShadow: "var(--shadow-sm)" }}>
               <h3 className="text-[14px] font-bold mb-4" style={{ color: "var(--fg2)" }}>📎 Files · {atts.length}</h3>
-              <AttachmentList attachments={atts} onDelete={async (aid) => { await attachmentsApi.delete(id, aid); setAtts(p => p.filter(a => a.attachmentId !== aid)); }} />
+              <AttachmentList attachments={atts} noteId={id} onDelete={async (aid) => { await attachmentsApi.delete(id, aid); setAtts(p => p.filter(a => a.attachmentId !== aid)); }} />
               <div className={atts.length ? "mt-4" : ""}>
                 <FileUpload onFileSelect={async (f) => { try { const a = await uploadFile(id, f); setAtts(p => [...p, a]); } catch {} }} isUploading={isUploading} progress={progress} />
               </div>

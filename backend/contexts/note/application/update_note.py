@@ -17,6 +17,7 @@ class UpdateNoteUseCase:
         description: str | None = None,
         tags: list[str] | None = None,
         visibility: str | None = None,
+        pinned: bool | None = None,
     ) -> Note:
         note = self.repository.find_by_id(user_id, note_id)
         if not note:
@@ -42,6 +43,13 @@ class UpdateNoteUseCase:
             if visibility not in ("public", "private"):
                 raise ValidationError("Visibility must be 'public' or 'private'")
             note.visibility = visibility
+
+        if pinned is not None:
+            if pinned and not note.pinned:
+                pinned_count = len([n for n in self.repository.find_all_by_user(user_id) if n.pinned])
+                if pinned_count >= 3:
+                    raise ValidationError("Maximum 3 pinned notes")
+            note.pinned = pinned
 
         note.updated_at = now_iso()
         self.repository.save(note)
