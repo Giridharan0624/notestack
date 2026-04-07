@@ -15,7 +15,7 @@ class UpdateNoteUseCase:
         title: str | None = None,
         content: str | None = None,
         description: str | None = None,
-        subject: str | None = None,
+        tags: list[str] | None = None,
         visibility: str | None = None,
     ) -> Note:
         note = self.repository.find_by_id(user_id, note_id)
@@ -35,8 +35,8 @@ class UpdateNoteUseCase:
                 raise ValidationError("Description must be 200 characters or less")
             note.description = description.strip()
 
-        if subject is not None:
-            note.subject = subject.strip()
+        if tags is not None:
+            note.tags = [t.strip().lower() for t in tags if t.strip()][:10]
 
         if visibility is not None:
             if visibility not in ("public", "private"):

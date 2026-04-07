@@ -17,143 +17,48 @@ export default function EditProfilePage() {
   const [bio, setBio] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    if (profile) {
-      setDisplayName(profile.displayName || "");
-      setUniversity(profile.university || "");
-      setBio(profile.bio || "");
-    }
-  }, [profile]);
+  useEffect(() => { if (profile) { setDisplayName(profile.displayName || ""); setUniversity(profile.university || ""); setBio(profile.bio || ""); } }, [profile]);
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsSaving(true);
-    try {
-      await updateProfile({ displayName, university, bio });
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
-    } finally {
-      setIsSaving(false);
-    }
+    e.preventDefault(); setError(""); setIsSaving(true);
+    try { await updateProfile({ displayName, university, bio }); setSaved(true); setTimeout(() => setSaved(false), 2000); }
+    catch (err) { setError(err instanceof Error ? err.message : "Failed to save"); }
+    finally { setIsSaving(false); }
   };
 
   return (
     <ProtectedRoute>
       <Header />
-      <main className="flex-1 max-w-2xl mx-auto w-full px-6 py-10">
-        {isLoading ? (
-          <Spinner className="mt-16" />
-        ) : (
-          <div className="animate-fade-in-up">
-            <div className="flex items-center justify-between mb-8">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-5 py-8">
+        {isLoading ? <Spinner className="mt-16" /> : (
+          <div className="animate-fade-up">
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <h2
-                  className="text-3xl font-semibold tracking-tight"
-                  style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
-                >
-                  Edit Profile
-                </h2>
-                <p className="text-sm mt-1" style={{ color: "var(--text-tertiary)" }}>
-                  This is how other students will see you
-                </p>
+                <h2 className="text-2xl font-bold tracking-tight">Edit Profile</h2>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>how other students see you</p>
               </div>
-              {success && (
-                <span
-                  className="text-xs font-medium px-2.5 py-1 rounded-full animate-fade-in"
-                  style={{ background: "var(--success-light)", color: "var(--success)" }}
-                >
-                  Saved
-                </span>
-              )}
+              {saved && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded" style={{ background: "var(--green-subtle)", color: "var(--green)", fontFamily: "var(--font-mono)" }}>saved</span>}
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-6 p-6 sm:p-8"
-              style={{
-                background: "var(--bg-card)",
-                borderRadius: "var(--radius-xl)",
-                border: "1px solid var(--border-light)",
-                boxShadow: "var(--shadow-sm)",
-              }}
-            >
-              <Input
-                id="displayName"
-                label="Display Name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="How should we call you?"
-                maxLength={50}
-              />
-
-              <Input
-                id="university"
-                label="University / College"
-                value={university}
-                onChange={(e) => setUniversity(e.target.value)}
-                placeholder="e.g. MIT, Stanford, UCLA"
-                maxLength={100}
-              />
-
+            <form onSubmit={handleSubmit} className="glass p-5 space-y-4" style={{ boxShadow: "var(--shadow-sm)" }}>
+              <Input id="displayName" label="Display Name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your name" maxLength={50} />
+              <Input id="university" label="University" value={university} onChange={(e) => setUniversity(e.target.value)} placeholder="e.g. MIT, Stanford" maxLength={100} />
               <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="bio"
-                  className="text-sm font-medium tracking-tight"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  Bio
-                </label>
-                <textarea
-                  id="bio"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell other students about yourself..."
-                  rows={4}
-                  maxLength={500}
-                  className="w-full px-3.5 py-3 text-sm leading-relaxed resize-y transition-all"
-                  style={{
-                    borderRadius: "var(--radius-md)",
-                    border: "1px solid var(--border)",
-                    background: "var(--bg-card)",
-                    color: "var(--text-primary)",
-                    fontFamily: "var(--font-body)",
-                    outline: "none",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "var(--accent)";
-                    e.currentTarget.style.boxShadow = "0 0 0 2px var(--accent-light)";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
+                <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>Bio</label>
+                <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell others about yourself..." rows={3} maxLength={500}
+                  className="w-full px-3.5 py-3 text-sm leading-relaxed resize-y transition-all focus:outline-none"
+                  style={{ borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--bg-surface)", color: "var(--text-primary)" }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.boxShadow = "0 0 0 2px var(--accent-subtle)"; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; }}
                 />
-                <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  {bio.length}/500
-                </span>
+                <span className="text-[10px]" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>{bio.length}/500</span>
               </div>
-
-              {error && (
-                <div
-                  className="text-sm px-3 py-2 rounded-[var(--radius-sm)]"
-                  style={{ background: "var(--danger-light)", color: "var(--danger)" }}
-                >
-                  {error}
-                </div>
-              )}
-
-              <div className="flex gap-2.5 justify-end pt-2">
-                <Button type="button" variant="secondary" onClick={() => router.push("/dashboard")}>
-                  Cancel
-                </Button>
-                <Button type="submit" isLoading={isSaving}>
-                  Save Profile
-                </Button>
+              {error && <div className="text-xs px-3 py-2 rounded-[var(--radius-sm)]" style={{ background: "var(--red-subtle)", color: "var(--red)" }}>{error}</div>}
+              <div className="flex gap-2 justify-end pt-1">
+                <Button type="button" variant="secondary" onClick={() => router.push("/dashboard")}>Cancel</Button>
+                <Button type="submit" isLoading={isSaving}>Save Profile</Button>
               </div>
             </form>
           </div>

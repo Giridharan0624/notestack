@@ -10,27 +10,20 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleLogout = () => {
-    logout();
-    router.replace("/login");
-  };
+  const handleLogout = () => { logout(); router.replace("/login"); };
 
   const navLink = (href: string, label: string) => {
     const active = pathname === href;
     return (
       <Link
         href={href}
-        className="text-sm font-medium transition-colors px-1 py-0.5"
+        className="text-sm font-medium px-3 py-1.5 rounded-[var(--radius-sm)] transition-all"
         style={{
-          color: active ? "var(--accent)" : "var(--text-secondary)",
-          borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
+          color: active ? "var(--text-primary)" : "var(--text-tertiary)",
+          background: active ? "var(--bg-surface)" : "transparent",
         }}
-        onMouseEnter={(e) => {
-          if (!active) e.currentTarget.style.color = "var(--text-primary)";
-        }}
-        onMouseLeave={(e) => {
-          if (!active) e.currentTarget.style.color = "var(--text-secondary)";
-        }}
+        onMouseEnter={(e) => { if (!active) { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.background = "var(--bg-raised)"; } }}
+        onMouseLeave={(e) => { if (!active) { e.currentTarget.style.color = "var(--text-tertiary)"; e.currentTarget.style.background = "transparent"; } }}
       >
         {label}
       </Link>
@@ -38,66 +31,29 @@ export default function Header() {
   };
 
   return (
-    <header
-      className="sticky top-0 z-40 animate-slide-down"
-      style={{
-        background: "rgba(250, 248, 245, 0.85)",
-        backdropFilter: "blur(12px) saturate(1.2)",
-        borderBottom: "1px solid var(--border-light)",
-      }}
-    >
-      <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-3.5">
-        <div className="flex items-center gap-6">
-          <div
-            className="flex items-center gap-2.5 cursor-pointer group"
-            onClick={() => router.push(isAuthenticated ? "/dashboard" : "/explore")}
-          >
-            <div
-              className="h-8 w-8 rounded-[var(--radius-sm)] flex items-center justify-center text-sm font-bold transition-transform duration-[var(--transition-fast)] group-hover:scale-105"
-              style={{
-                background: "var(--text-primary)",
-                color: "var(--text-inverse)",
-                fontFamily: "var(--font-display)",
-              }}
-            >
-              N
-            </div>
-            <span
-              className="text-lg font-semibold tracking-tight hidden sm:block"
-              style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
-            >
-              NoteStack
-            </span>
+    <header className="sticky top-0 z-40 animate-slide-down" style={{ background: "rgba(12,12,15,0.8)", backdropFilter: "blur(16px) saturate(1.4)", borderBottom: "1px solid var(--border)" }}>
+      <div className="max-w-6xl mx-auto flex items-center justify-between px-5 py-2.5">
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push(isAuthenticated ? "/dashboard" : "/explore")}>
+            <div className="h-7 w-7 rounded-[var(--radius-sm)] flex items-center justify-center text-xs font-bold" style={{ background: "var(--accent-gradient)", color: "white" }}>N</div>
+            <span className="text-sm font-bold tracking-tight hidden sm:block" style={{ color: "var(--text-primary)" }}>NoteStack</span>
           </div>
-
-          <nav className="flex items-center gap-4">
+          <nav className="flex items-center gap-1">
             {navLink("/explore", "Explore")}
             {isAuthenticated && navLink("/dashboard", "My Notes")}
           </nav>
         </div>
-
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/profile/edit")}
-              >
-                Profile
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                Sign out
-              </Button>
+              <span className="text-xs hidden sm:block mr-1" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>{userEmail}</span>
+              <Button variant="ghost" size="sm" onClick={() => router.push("/profile/edit")}>Profile</Button>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>Sign out</Button>
             </>
           ) : (
             <>
-              <Button variant="ghost" size="sm" onClick={() => router.push("/login")}>
-                Sign in
-              </Button>
-              <Button size="sm" onClick={() => router.push("/signup")}>
-                Sign up
-              </Button>
+              <Button variant="ghost" size="sm" onClick={() => router.push("/login")}>Sign in</Button>
+              <Button size="sm" onClick={() => router.push("/signup")}>Sign up</Button>
             </>
           )}
         </div>

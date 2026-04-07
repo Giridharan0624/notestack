@@ -3,104 +3,49 @@
 import { Note } from "@/lib/types";
 import Link from "next/link";
 
-const SUBJECT_COLORS: Record<string, string> = {
-  CS: "#6366f1",
-  Math: "#ec4899",
-  Biology: "#22c55e",
-  Physics: "#f59e0b",
-  English: "#8b5cf6",
-  History: "#ef4444",
-  Business: "#06b6d4",
-  Engineering: "#f97316",
-};
-
 export default function PublicNoteCard({ note, index = 0 }: { note: Note; index?: number }) {
-  const formattedDate = new Date(note.createdAt).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-
-  const subjectColor = SUBJECT_COLORS[note.subject] || "var(--text-tertiary)";
+  const date = new Date(note.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
   return (
     <Link
       href={`/feed/notes/${note.noteId}`}
-      className={`block group animate-fade-in-up stagger-${Math.min(index + 1, 6)}`}
-      style={{
-        background: "var(--bg-card)",
-        borderRadius: "var(--radius-lg)",
-        border: "1px solid var(--border-light)",
-        boxShadow: "var(--shadow-sm)",
-        transition: "all var(--transition-base)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = "var(--shadow-md)";
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = "var(--shadow-sm)";
-        e.currentTarget.style.transform = "translateY(0)";
-      }}
+      className={`block glass group animate-fade-up stagger-${Math.min(index + 1, 6)} transition-all`}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border-hover)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.transform = "translateY(0)"; }}
     >
-      <div className="p-5">
+      <div className="p-4">
         <div className="flex items-center gap-2 mb-2.5">
-          {note.subject && (
-            <span
-              className="text-xs font-semibold px-2 py-0.5 rounded-full"
-              style={{
-                background: `${subjectColor}15`,
-                color: subjectColor,
-              }}
-            >
-              {note.subject}
+          {note.tags.length > 0 && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded" style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
+              {note.tags[0]}
             </span>
           )}
-          <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-            {formattedDate}
-          </span>
+          <span className="text-[10px] ml-auto" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>{date}</span>
         </div>
 
-        <h3
-          className="font-semibold text-base leading-snug mb-1.5 truncate"
-          style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
-        >
-          {note.title}
-        </h3>
-
+        <h3 className="font-semibold text-sm truncate mb-1" style={{ color: "var(--text-primary)" }}>{note.title}</h3>
         {note.description && (
-          <p
-            className="text-sm leading-relaxed mb-3"
-            style={{
-              color: "var(--text-secondary)",
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
+          <p className="text-xs leading-relaxed mb-3" style={{ color: "var(--text-tertiary)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
             {note.description}
           </p>
         )}
 
-        <div className="flex items-center gap-2 pt-2" style={{ borderTop: "1px solid var(--border-light)" }}>
-          <div
-            className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold"
-            style={{
-              background: "var(--accent-light)",
-              color: "var(--accent)",
-              fontFamily: "var(--font-display)",
-            }}
-          >
+        {note.tags.length > 1 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {note.tags.slice(1, 4).map((tag) => (
+              <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "var(--bg-overlay)", color: "var(--text-tertiary)" }}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 pt-2.5" style={{ borderTop: "1px solid var(--border)" }}>
+          <div className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+            style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
             {(note.authorDisplayName || "S")[0].toUpperCase()}
           </div>
-          <Link
-            href={`/profile/${note.userId}`}
-            className="text-xs font-medium hover:underline"
-            style={{ color: "var(--text-secondary)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {note.authorDisplayName || "Student"}
-          </Link>
+          <span className="text-[11px]" style={{ color: "var(--text-tertiary)" }}>{note.authorDisplayName || "Student"}</span>
         </div>
       </div>
     </Link>

@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import Header from "@/components/Header";
 import PublicNoteCard from "@/components/PublicNoteCard";
 import Spinner from "@/components/ui/Spinner";
-import Button from "@/components/ui/Button";
 import { profileApi, feedApi } from "@/lib/api";
 import { UserProfile, Note } from "@/lib/types";
 
@@ -19,90 +18,39 @@ export default function ProfilePage() {
 
   useEffect(() => {
     Promise.all([profileApi.get(userId), feedApi.userNotes(userId)])
-      .then(([p, n]) => {
-        setProfile(p);
-        setNotes(n.notes);
-      })
-      .catch((err) => setError(err.message))
+      .then(([p, n]) => { setProfile(p); setNotes(n.notes); })
+      .catch((e) => setError(e.message))
       .finally(() => setIsLoading(false));
   }, [userId]);
 
   return (
     <>
       <Header />
-      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-10">
-        {isLoading ? (
-          <Spinner className="mt-16" />
-        ) : error ? (
-          <div
-            className="text-center mt-16 p-4 rounded-[var(--radius-md)]"
-            style={{ background: "var(--danger-light)", color: "var(--danger)" }}
-          >
-            {error}
-          </div>
+      <main className="flex-1 max-w-6xl mx-auto w-full px-5 py-8">
+        {isLoading ? <Spinner className="mt-16" /> : error ? (
+          <div className="text-center mt-16 p-3 rounded-[var(--radius-md)] text-xs" style={{ background: "var(--red-subtle)", color: "var(--red)" }}>{error}</div>
         ) : profile ? (
-          <div className="animate-fade-in-up">
-            {/* Profile header */}
-            <div
-              className="p-6 sm:p-8 mb-8"
-              style={{
-                background: "var(--bg-card)",
-                borderRadius: "var(--radius-xl)",
-                border: "1px solid var(--border-light)",
-                boxShadow: "var(--shadow-sm)",
-              }}
-            >
-              <div className="flex items-start gap-5">
-                <div
-                  className="h-16 w-16 rounded-full flex items-center justify-center text-2xl font-bold shrink-0"
-                  style={{
-                    background: "var(--accent-light)",
-                    color: "var(--accent)",
-                    fontFamily: "var(--font-display)",
-                  }}
-                >
+          <div className="animate-fade-up">
+            <div className="glass p-5 mb-6" style={{ boxShadow: "var(--shadow-sm)" }}>
+              <div className="flex items-start gap-4">
+                <div className="h-14 w-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
+                  style={{ background: "var(--accent-subtle)", color: "var(--accent)" }}>
                   {(profile.displayName || "S")[0].toUpperCase()}
                 </div>
                 <div>
-                  <h2
-                    className="text-2xl font-semibold tracking-tight"
-                    style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
-                  >
-                    {profile.displayName || "Student"}
-                  </h2>
-                  {profile.university && (
-                    <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>
-                      {profile.university}
-                    </p>
-                  )}
-                  {profile.bio && (
-                    <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-                      {profile.bio}
-                    </p>
-                  )}
-                  <p className="text-xs mt-2" style={{ color: "var(--text-tertiary)" }}>
-                    {notes.length} public note{notes.length !== 1 ? "s" : ""}
-                  </p>
+                  <h2 className="text-xl font-bold tracking-tight">{profile.displayName || "Student"}</h2>
+                  {profile.university && <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>{profile.university}</p>}
+                  {profile.bio && <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--text-tertiary)" }}>{profile.bio}</p>}
+                  <p className="text-[10px] mt-2 uppercase tracking-wider font-bold" style={{ color: "var(--text-tertiary)", fontFamily: "var(--font-mono)" }}>{notes.length} public note{notes.length !== 1 ? "s" : ""}</p>
                 </div>
               </div>
             </div>
 
-            {/* Public notes */}
-            <h3
-              className="text-lg font-semibold mb-4"
-              style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
-            >
-              Public Notes
-            </h3>
             {notes.length === 0 ? (
-              <p className="text-sm py-8 text-center" style={{ color: "var(--text-tertiary)" }}>
-                No public notes yet
-              </p>
+              <p className="text-sm py-10 text-center" style={{ color: "var(--text-tertiary)" }}>No public notes yet</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {notes.map((note, i) => (
-                  <PublicNoteCard key={note.noteId} note={note} index={i} />
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {notes.map((n, i) => <PublicNoteCard key={n.noteId} note={n} index={i} />)}
               </div>
             )}
           </div>

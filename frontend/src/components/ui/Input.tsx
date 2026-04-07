@@ -17,38 +17,30 @@ export default function Input({
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label
-          htmlFor={id}
-          className="text-sm font-medium tracking-tight"
-          style={{ color: "var(--text-primary)" }}
-        >
+        <label htmlFor={id} className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-tertiary)" }}>
           {label}
         </label>
       )}
       <input
         id={id}
-        className={`
-          w-full px-3.5 py-2.5 text-sm
-          rounded-[var(--radius-md)]
-          border transition-all duration-[var(--transition-fast)]
-          placeholder:text-[var(--text-tertiary)]
-          focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-1 focus:border-transparent
-          ${error
-            ? "border-[var(--danger)] bg-[var(--danger-light)]"
-            : "border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--text-tertiary)]"
-          }
-          ${className}
-        `}
+        className={`w-full px-3.5 py-2.5 text-sm rounded-[var(--radius-md)] border transition-all focus:outline-none placeholder:text-[var(--text-tertiary)] ${className}`}
         style={{
+          background: "var(--bg-surface)",
+          borderColor: error ? "var(--red)" : "var(--border)",
           color: "var(--text-primary)",
-          fontFamily: "var(--font-body)",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = "var(--accent)";
+          e.currentTarget.style.boxShadow = "0 0 0 2px var(--accent-subtle)";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = error ? "var(--red)" : "var(--border)";
+          e.currentTarget.style.boxShadow = "none";
         }}
         {...props}
       />
       {error && (
-        <p className="text-xs font-medium" style={{ color: "var(--danger)" }}>
-          {error}
-        </p>
+        <p className="text-xs" style={{ color: "var(--red)" }}>{error}</p>
       )}
     </div>
   );

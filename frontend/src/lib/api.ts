@@ -39,7 +39,7 @@ export const notesApi = {
     title: string;
     content?: string;
     description?: string;
-    subject?: string;
+    tags?: string[];
     visibility?: string;
   }) =>
     request<Note>("/notes", {
@@ -50,7 +50,7 @@ export const notesApi = {
     title?: string;
     content?: string;
     description?: string;
-    subject?: string;
+    tags?: string[];
     visibility?: string;
   }) =>
     request<Note>(`/notes/${id}`, {

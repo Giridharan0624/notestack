@@ -44,7 +44,7 @@ def create_note(event, user_id, body, path_params, query_params):
         title=body.get("title", ""),
         content=body.get("content", ""),
         description=body.get("description", ""),
-        subject=body.get("subject", ""),
+        tags=body.get("tags", []),
         visibility=body.get("visibility", "private"),
         author_display_name=display_name,
     )

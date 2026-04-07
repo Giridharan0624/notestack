@@ -16,7 +16,7 @@ class CreateNoteUseCase:
         title: str,
         content: str = "",
         description: str = "",
-        subject: str = "",
+        tags: list[str] | None = None,
         visibility: str = "private",
         author_display_name: str = "",
     ) -> Note:
@@ -29,12 +29,16 @@ class CreateNoteUseCase:
         if len(description) > 200:
             raise ValidationError("Description must be 200 characters or less")
 
+        clean_tags = []
+        if tags:
+            clean_tags = [t.strip().lower() for t in tags if t.strip()][:10]
+
         note = Note(
             user_id=user_id,
             title=title.strip(),
             content=content,
             description=description.strip(),
-            subject=subject.strip(),
+            tags=clean_tags,
             visibility=visibility,
             author_display_name=author_display_name,
         )

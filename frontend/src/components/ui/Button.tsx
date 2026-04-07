@@ -15,47 +15,46 @@ export default function Button({
   isLoading = false,
   className = "",
   disabled,
+  style,
   ...props
 }: ButtonProps) {
-  const base = `
-    inline-flex items-center justify-center gap-2 font-medium
-    transition-all duration-[var(--transition-fast)]
-    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]
-    disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none
-    active:scale-[0.97] cursor-pointer
-  `;
+  const base = "inline-flex items-center justify-center gap-2 font-medium cursor-pointer transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none";
 
   const variants: Record<string, string> = {
-    primary: `
-      bg-[var(--text-primary)] text-[var(--text-inverse)]
-      hover:bg-[var(--text-secondary)]
-      shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)]
-    `,
-    secondary: `
-      bg-[var(--bg-secondary)] text-[var(--text-primary)]
-      border border-[var(--border)]
-      hover:bg-[var(--border-light)] hover:border-[var(--text-tertiary)]
-    `,
-    danger: `
-      bg-[var(--danger)] text-white
-      hover:bg-[var(--danger-hover)]
-      shadow-[var(--shadow-sm)]
-    `,
-    ghost: `
-      bg-transparent text-[var(--text-secondary)]
-      hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]
-    `,
+    primary: "text-white",
+    secondary: "text-[var(--text-primary)]",
+    danger: "text-[var(--red)]",
+    ghost: "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+  };
+
+  const variantStyles: Record<string, React.CSSProperties> = {
+    primary: {
+      background: "var(--accent-gradient)",
+      boxShadow: "0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
+    },
+    secondary: {
+      background: "var(--bg-surface)",
+      border: "1px solid var(--border)",
+    },
+    danger: {
+      background: "var(--red-subtle)",
+      border: "1px solid transparent",
+    },
+    ghost: {
+      background: "transparent",
+    },
   };
 
   const sizes: Record<string, string> = {
-    sm: "text-xs px-3 py-1.5 rounded-[var(--radius-sm)]",
-    md: "text-sm px-4 py-2 rounded-[var(--radius-md)]",
-    lg: "text-base px-6 py-2.5 rounded-[var(--radius-md)]",
+    sm: "text-xs px-2.5 py-1.5 rounded-[var(--radius-sm)]",
+    md: "text-sm px-3.5 py-2 rounded-[var(--radius-md)]",
+    lg: "text-sm px-5 py-2.5 rounded-[var(--radius-md)]",
   };
 
   return (
     <button
       className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
+      style={{ ...variantStyles[variant], ...style }}
       disabled={disabled || isLoading}
       {...props}
     >

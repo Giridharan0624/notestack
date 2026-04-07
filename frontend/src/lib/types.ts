@@ -4,7 +4,7 @@ export interface Note {
   title: string;
   content: string;
   description: string;
-  subject: string;
+  tags: string[];
   visibility: "public" | "private";
   authorDisplayName: string;
   createdAt: string;

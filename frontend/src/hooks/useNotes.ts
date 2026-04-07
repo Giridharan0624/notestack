@@ -30,7 +30,7 @@ export function useNotes() {
     title: string;
     content?: string;
     description?: string;
-    subject?: string;
+    tags?: string[];
     visibility?: string;
   }) => {
     const note = await notesApi.create(data);
@@ -44,7 +44,7 @@ export function useNotes() {
       title?: string;
       content?: string;
       description?: string;
-      subject?: string;
+      tags?: string[];
       visibility?: string;
     }
   ) => {

@@ -9,7 +9,7 @@ class Note(BaseModel):
     title: str
     content: str = ""
     description: str = ""
-    subject: str = ""
+    tags: list[str] = Field(default_factory=list)
     visibility: str = "private"
     author_display_name: str = ""
     created_at: str = Field(default_factory=now_iso)
@@ -24,7 +24,7 @@ class Note(BaseModel):
             "title": self.title,
             "content": self.content,
             "description": self.description,
-            "subject": self.subject,
+            "tags": self.tags,
             "visibility": self.visibility,
             "author_display_name": self.author_display_name,
             "created_at": self.created_at,
@@ -52,7 +52,7 @@ class Note(BaseModel):
             title=item["title"],
             content=item.get("content", ""),
             description=item.get("description", ""),
-            subject=item.get("subject", ""),
+            tags=item.get("tags", []),
             visibility=item.get("visibility", "private"),
             author_display_name=item.get("author_display_name", ""),
             created_at=item["created_at"],
@@ -66,7 +66,7 @@ class Note(BaseModel):
             "title": self.title,
             "content": self.content,
             "description": self.description,
-            "subject": self.subject,
+            "tags": self.tags,
             "visibility": self.visibility,
             "authorDisplayName": self.author_display_name,
             "createdAt": self.created_at,
