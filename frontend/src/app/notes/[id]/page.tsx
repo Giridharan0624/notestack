@@ -22,6 +22,7 @@ export default function NoteDetailPage() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const { uploadFile, isUploading, progress } = useUpload();
 
   const fetchData = useCallback(async () => {
@@ -44,9 +45,17 @@ export default function NoteDetailPage() {
     fetchData();
   }, [fetchData]);
 
-  const handleUpdate = async (title: string, content: string) => {
-    const updated = await notesApi.update(noteId, { title, content });
+  const handleUpdate = async (data: {
+    title: string;
+    content: string;
+    description: string;
+    subject: string;
+    visibility: string;
+  }) => {
+    const updated = await notesApi.update(noteId, data);
     setNote(updated);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
   };
 
   const handleDelete = async () => {
@@ -73,36 +82,89 @@ export default function NoteDetailPage() {
   return (
     <ProtectedRoute>
       <Header />
-      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-10">
         {isLoading ? (
-          <Spinner className="mt-12" />
+          <Spinner className="mt-16" />
         ) : error ? (
-          <p className="text-red-600 text-center mt-12">{error}</p>
+          <div
+            className="text-center mt-16 p-4 rounded-[var(--radius-md)]"
+            style={{ background: "var(--danger-light)", color: "var(--danger)" }}
+          >
+            {error}
+          </div>
         ) : note ? (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-fade-in-up">
             <div className="flex items-center justify-between">
               <Button
-                variant="secondary"
+                variant="ghost"
+                size="sm"
                 onClick={() => router.push("/dashboard")}
               >
-                Back
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Back to notes
               </Button>
-              <Button variant="danger" onClick={handleDelete}>
-                Delete Note
-              </Button>
+
+              <div className="flex items-center gap-2">
+                {saveSuccess && (
+                  <span
+                    className="text-xs font-medium px-2.5 py-1 rounded-full animate-fade-in"
+                    style={{ background: "var(--success-light)", color: "var(--success)" }}
+                  >
+                    Saved
+                  </span>
+                )}
+                {note.visibility === "public" && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => window.open(`/feed/notes/${note.noteId}`, "_blank")}
+                  >
+                    View public link
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={handleDelete} style={{ color: "var(--danger)" }}>
+                  Delete
+                </Button>
+              </div>
             </div>
 
-            <NoteForm
-              initialTitle={note.title}
-              initialContent={note.content}
-              submitLabel="Update"
-              onSubmit={handleUpdate}
-            />
+            <div
+              className="p-6 sm:p-8"
+              style={{
+                background: "var(--bg-card)",
+                borderRadius: "var(--radius-xl)",
+                border: "1px solid var(--border-light)",
+                boxShadow: "var(--shadow-sm)",
+              }}
+            >
+              <NoteForm
+                initialTitle={note.title}
+                initialContent={note.content}
+                initialDescription={note.description}
+                initialSubject={note.subject}
+                initialVisibility={note.visibility}
+                submitLabel="Save changes"
+                onSubmit={handleUpdate}
+              />
+            </div>
 
-            <hr className="border-gray-200" />
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">Files</h3>
+            <div
+              className="p-6 sm:p-8 space-y-5"
+              style={{
+                background: "var(--bg-card)",
+                borderRadius: "var(--radius-xl)",
+                border: "1px solid var(--border-light)",
+                boxShadow: "var(--shadow-sm)",
+              }}
+            >
+              <h3
+                className="text-lg font-semibold tracking-tight"
+                style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
+              >
+                Files
+              </h3>
               <FileUpload
                 onFileSelect={handleFileUpload}
                 isUploading={isUploading}

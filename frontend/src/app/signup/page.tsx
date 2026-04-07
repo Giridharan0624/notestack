@@ -26,22 +26,67 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4">
-      <AuthForm
-        title="Create your account"
-        submitLabel="Sign Up"
-        onSubmit={handleSignup}
-        showConfirmation
-        onConfirm={handleConfirm}
-        footer={
-          <p className="text-sm text-center text-gray-600 mt-2">
-            Already have an account?{" "}
-            <Link href="/login" className="text-blue-600 hover:underline">
-              Sign in
-            </Link>
-          </p>
-        }
+    <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <div
+        className="absolute top-0 left-0 w-96 h-96 rounded-full opacity-30 blur-3xl"
+        style={{ background: "var(--accent-glow)" }}
       />
+      <div
+        className="absolute bottom-0 right-0 w-80 h-80 rounded-full opacity-20 blur-3xl"
+        style={{ background: "var(--accent-light)" }}
+      />
+
+      <div className="mb-10 flex items-center gap-3 animate-fade-in-up">
+        <div
+          className="h-10 w-10 rounded-[var(--radius-md)] flex items-center justify-center text-base font-bold"
+          style={{
+            background: "var(--text-primary)",
+            color: "var(--text-inverse)",
+            fontFamily: "var(--font-display)",
+          }}
+        >
+          N
+        </div>
+        <span
+          className="text-xl font-semibold tracking-tight"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          NoteStack
+        </span>
+      </div>
+
+      <div
+        className="w-full max-w-md p-8 relative"
+        style={{
+          background: "var(--bg-card)",
+          borderRadius: "var(--radius-xl)",
+          boxShadow: "var(--shadow-lg)",
+          border: "1px solid var(--border-light)",
+        }}
+      >
+        <AuthForm
+          title="Create your account"
+          subtitle="Start organizing your notes today"
+          submitLabel="Create account"
+          onSubmit={handleSignup}
+          showConfirmation
+          onConfirm={handleConfirm}
+          footer={
+            <p className="text-sm text-center" style={{ color: "var(--text-tertiary)" }}>
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="font-medium transition-colors"
+                style={{ color: "var(--accent)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--accent)")}
+              >
+                Sign in
+              </Link>
+            </p>
+          }
+        />
+      </div>
     </div>
   );
 }

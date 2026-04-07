@@ -23,8 +23,17 @@ class InMemoryNoteRepository(NoteRepository):
     def find_all_by_user(self, user_id: str) -> list[Note]:
         return [n for n in self.notes.values() if n.user_id == user_id]
 
+    def find_public_by_user(self, user_id: str) -> list[Note]:
+        return [n for n in self.notes.values() if n.user_id == user_id and n.visibility == "public"]
+
     def delete(self, user_id: str, note_id: str) -> None:
         self.notes.pop(f"{user_id}:{note_id}", None)
+
+    def save_lookup(self, note: Note) -> None:
+        pass
+
+    def delete_lookup(self, note_id: str) -> None:
+        pass
 
 
 @pytest.fixture

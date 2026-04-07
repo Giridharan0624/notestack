@@ -20,6 +20,10 @@ out/
 cdk.out/
 .cdk.staging/
 
+# Lambda deps
+backend/lambda_layer/
+*.so
+
 # Environment
 .env
 .env.local

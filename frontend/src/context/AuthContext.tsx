@@ -16,6 +16,11 @@ import {
   getSession,
 } from "@/lib/auth";
 
+const IS_DEV_MODE =
+  process.env.NEXT_PUBLIC_DEV_AUTH === "true" ||
+  (!process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID &&
+    !process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID);
+
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -29,11 +34,15 @@ interface AuthState {
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(IS_DEV_MODE);
+  const [isLoading, setIsLoading] = useState(!IS_DEV_MODE);
+  const [userEmail, setUserEmail] = useState<string | null>(
+    IS_DEV_MODE ? "dev@local.test" : null
+  );
 
   useEffect(() => {
+    if (IS_DEV_MODE) return;
+
     getSession().then((session) => {
       if (session) {
         setIsAuthenticated(true);
@@ -45,6 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    if (IS_DEV_MODE) {
+      setIsAuthenticated(true);
+      setUserEmail(email);
+      return;
+    }
     const session = await cognitoSignIn(email, password);
     setIsAuthenticated(true);
     const payload = session.getIdToken().decodePayload();
@@ -52,18 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signup = useCallback(async (email: string, password: string) => {
+    if (IS_DEV_MODE) return;
     await cognitoSignUp(email, password);
   }, []);
 
   const confirmSignup = useCallback(
     async (email: string, code: string) => {
+      if (IS_DEV_MODE) return;
       await cognitoConfirmSignUp(email, code);
     },
     []
   );
 
   const logout = useCallback(() => {
-    cognitoSignOut();
+    if (!IS_DEV_MODE) cognitoSignOut();
     setIsAuthenticated(false);
     setUserEmail(null);
   }, []);

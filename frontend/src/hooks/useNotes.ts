@@ -26,15 +26,27 @@ export function useNotes() {
     fetchNotes();
   }, [fetchNotes]);
 
-  const createNote = async (title: string, content: string = "") => {
-    const note = await notesApi.create(title, content);
+  const createNote = async (data: {
+    title: string;
+    content?: string;
+    description?: string;
+    subject?: string;
+    visibility?: string;
+  }) => {
+    const note = await notesApi.create(data);
     setNotes((prev) => [note, ...prev]);
     return note;
   };
 
   const updateNote = async (
     id: string,
-    data: { title?: string; content?: string }
+    data: {
+      title?: string;
+      content?: string;
+      description?: string;
+      subject?: string;
+      visibility?: string;
+    }
   ) => {
     const updated = await notesApi.update(id, data);
     setNotes((prev) => prev.map((n) => (n.noteId === id ? updated : n)));

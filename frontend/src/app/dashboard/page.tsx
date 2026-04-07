@@ -16,8 +16,14 @@ export default function DashboardPage() {
   const [showCreate, setShowCreate] = useState(false);
   const router = useRouter();
 
-  const handleCreate = async (title: string, content: string) => {
-    const note = await createNote(title, content);
+  const handleCreate = async (data: {
+    title: string;
+    content: string;
+    description: string;
+    subject: string;
+    visibility: string;
+  }) => {
+    const note = await createNote(data);
     setShowCreate(false);
     router.push(`/notes/${note.noteId}`);
   };
@@ -25,16 +31,38 @@ export default function DashboardPage() {
   return (
     <ProtectedRoute>
       <Header />
-      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">My Notes</h2>
-          <Button onClick={() => setShowCreate(true)}>New Note</Button>
+      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-10">
+        <div className="flex items-end justify-between mb-8 animate-fade-in-up">
+          <div>
+            <h2
+              className="text-3xl font-semibold tracking-tight"
+              style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
+            >
+              My Notes
+            </h2>
+            <p className="text-sm mt-1" style={{ color: "var(--text-tertiary)" }}>
+              {notes.length > 0
+                ? `${notes.length} note${notes.length === 1 ? "" : "s"}`
+                : "Your personal workspace"}
+            </p>
+          </div>
+          <Button onClick={() => setShowCreate(true)} size="md">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            New note
+          </Button>
         </div>
 
         {isLoading ? (
-          <Spinner className="mt-12" />
+          <Spinner className="mt-16" />
         ) : error ? (
-          <p className="text-red-600 text-center mt-12">{error}</p>
+          <div
+            className="text-center mt-16 p-4 rounded-[var(--radius-md)]"
+            style={{ background: "var(--danger-light)", color: "var(--danger)" }}
+          >
+            {error}
+          </div>
         ) : (
           <NoteList notes={notes} />
         )}
@@ -42,7 +70,7 @@ export default function DashboardPage() {
         <Modal
           isOpen={showCreate}
           onClose={() => setShowCreate(false)}
-          title="Create Note"
+          title="Create a new note"
         >
           <NoteForm
             submitLabel="Create"

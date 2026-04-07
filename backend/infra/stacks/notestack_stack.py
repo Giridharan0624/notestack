@@ -73,6 +73,13 @@ class NoteStackStack(Stack):
             projection_type=dynamodb.ProjectionType.ALL,
         )
 
+        table.add_global_secondary_index(
+            index_name="gsi2",
+            partition_key=dynamodb.Attribute(name="gsi2pk", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="gsi2sk", type=dynamodb.AttributeType.STRING),
+            projection_type=dynamodb.ProjectionType.ALL,
+        )
+
         # ──────────────────────────────────────────────
         # S3 Bucket for File Uploads
         # ──────────────────────────────────────────────
@@ -99,12 +106,24 @@ class NoteStackStack(Stack):
         )
 
         # ──────────────────────────────────────────────
+        # Lambda Layer (shared dependencies)
+        # ──────────────────────────────────────────────
+        deps_layer = _lambda.LayerVersion(
+            self,
+            "DepsLayer",
+            code=_lambda.Code.from_asset("../lambda_layer"),
+            compatible_runtimes=[_lambda.Runtime.PYTHON_3_11],
+            description="NoteStack Python dependencies (pydantic, python-jose)",
+        )
+
+        # ──────────────────────────────────────────────
         # Lambda Functions (one per bounded context)
         # ──────────────────────────────────────────────
         lambda_defaults = {
             "runtime": _lambda.Runtime.PYTHON_3_11,
             "timeout": Duration.seconds(30),
             "memory_size": 256,
+            "layers": [deps_layer],
             "environment": {
                 "TABLE_NAME": table.table_name,
                 "BUCKET_NAME": bucket.bucket_name,
@@ -116,7 +135,7 @@ class NoteStackStack(Stack):
             "NoteFn",
             function_name="notestack-note",
             handler="contexts.note.interfaces.handlers.handler",
-            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "local_server.py", ".pytest_cache", "__pycache__"]),
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "lambda_layer", "local_server.py", ".pytest_cache", "__pycache__", "*.dist-info"]),
             **lambda_defaults,
         )
 
@@ -125,7 +144,7 @@ class NoteStackStack(Stack):
             "UploadFn",
             function_name="notestack-upload",
             handler="contexts.upload.interfaces.handlers.handler",
-            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "local_server.py", ".pytest_cache", "__pycache__"]),
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "lambda_layer", "local_server.py", ".pytest_cache", "__pycache__", "*.dist-info"]),
             **lambda_defaults,
         )
 
@@ -134,7 +153,7 @@ class NoteStackStack(Stack):
             "AttachmentFn",
             function_name="notestack-attachment",
             handler="contexts.attachment.interfaces.handlers.handler",
-            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "local_server.py", ".pytest_cache", "__pycache__"]),
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "lambda_layer", "local_server.py", ".pytest_cache", "__pycache__", "*.dist-info"]),
             **lambda_defaults,
         )
 
@@ -144,16 +163,36 @@ class NoteStackStack(Stack):
             "UserFn",
             function_name="notestack-user",
             handler="contexts.user.interfaces.handlers.handler",
-            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "local_server.py", ".pytest_cache", "__pycache__"]),
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "lambda_layer", "local_server.py", ".pytest_cache", "__pycache__", "*.dist-info"]),
             runtime=lambda_defaults["runtime"],
             timeout=lambda_defaults["timeout"],
             memory_size=lambda_defaults["memory_size"],
             environment=user_env,
         )
 
+        profile_fn = _lambda.Function(
+            self,
+            "ProfileFn",
+            function_name="notestack-profile",
+            handler="contexts.profile.interfaces.handlers.handler",
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "lambda_layer", "local_server.py", ".pytest_cache", "__pycache__", "*.dist-info"]),
+            **lambda_defaults,
+        )
+
+        feed_fn = _lambda.Function(
+            self,
+            "FeedFn",
+            function_name="notestack-feed",
+            handler="contexts.feed.interfaces.handlers.handler",
+            code=_lambda.Code.from_asset("..", exclude=["infra", "tests", "lambda_layer", "local_server.py", ".pytest_cache", "__pycache__", "*.dist-info"]),
+            **lambda_defaults,
+        )
+
         # IAM permissions
         table.grant_read_write_data(note_fn)
         table.grant_read_write_data(attachment_fn)
+        table.grant_read_write_data(profile_fn)
+        table.grant_read_data(feed_fn)
         bucket.grant_put(upload_fn)
         bucket.grant_read(attachment_fn)
         bucket.grant_put(attachment_fn)
@@ -265,10 +304,41 @@ class NoteStackStack(Stack):
             authorizer=authorizer,
         )
 
+        # Feed routes (public — no authorizer)
+        feed_resource = api.root.add_resource("feed")
+        feed_resource.add_method("GET", apigw.LambdaIntegration(feed_fn))
+
+        feed_notes_resource = feed_resource.add_resource("notes")
+        feed_note_id_resource = feed_notes_resource.add_resource("{noteId}")
+        feed_note_id_resource.add_method("GET", apigw.LambdaIntegration(feed_fn))
+
+        # Users routes (public — no authorizer)
+        users_resource = api.root.add_resource("users")
+        user_id_resource = users_resource.add_resource("{userId}")
+        user_id_resource.add_method("GET", apigw.LambdaIntegration(profile_fn))
+
+        user_notes_resource = user_id_resource.add_resource("notes")
+        user_notes_resource.add_method("GET", apigw.LambdaIntegration(feed_fn))
+
+        # Profile routes (authenticated)
+        me_profile_resource = me_resource.add_resource("profile")
+        me_profile_resource.add_method(
+            "GET",
+            apigw.LambdaIntegration(profile_fn),
+            authorization_type=apigw.AuthorizationType.COGNITO,
+            authorizer=authorizer,
+        )
+        me_profile_resource.add_method(
+            "PUT",
+            apigw.LambdaIntegration(profile_fn),
+            authorization_type=apigw.AuthorizationType.COGNITO,
+            authorizer=authorizer,
+        )
+
         # ──────────────────────────────────────────────
         # CloudWatch Alarms
         # ──────────────────────────────────────────────
-        for fn_name, fn in [("user", user_fn), ("note", note_fn), ("upload", upload_fn), ("attachment", attachment_fn)]:
+        for fn_name, fn in [("user", user_fn), ("note", note_fn), ("upload", upload_fn), ("attachment", attachment_fn), ("profile", profile_fn), ("feed", feed_fn)]:
             cloudwatch.Alarm(
                 self,
                 f"{fn_name.capitalize()}ErrorAlarm",

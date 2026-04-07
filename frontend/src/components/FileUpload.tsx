@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, DragEvent } from "react";
-import Button from "./ui/Button";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -30,31 +29,48 @@ export default function FileUpload({
   };
 
   return (
-    <div>
+    <div className="space-y-3">
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={() => setIsDragging(false)}
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-          isDragging
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-300 hover:border-gray-400"
-        }`}
+        className="relative overflow-hidden cursor-pointer transition-all"
+        style={{
+          borderRadius: "var(--radius-lg)",
+          border: `2px dashed ${isDragging ? "var(--accent)" : "var(--border)"}`,
+          background: isDragging ? "var(--accent-light)" : "var(--bg-secondary)",
+          padding: "2rem",
+          textAlign: "center",
+          transition: "all var(--transition-fast)",
+        }}
+        onClick={() => inputRef.current?.click()}
       >
-        <p className="text-sm text-gray-600">
-          Drag & drop a file here, or{" "}
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="text-blue-600 hover:underline"
-            disabled={isUploading}
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="h-10 w-10 rounded-full flex items-center justify-center"
+            style={{
+              background: isDragging ? "var(--accent-glow)" : "var(--bg-card)",
+              border: "1px solid var(--border-light)",
+              transition: "all var(--transition-fast)",
+            }}
           >
-            browse
-          </button>
-        </p>
-        <p className="text-xs text-gray-400 mt-1">
-          PDF, images, documents up to 10MB
-        </p>
+            <svg
+              width="20" height="20" viewBox="0 0 24 24" fill="none"
+              style={{ color: isDragging ? "var(--accent)" : "var(--text-tertiary)" }}
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              Drop a file here or{" "}
+              <span style={{ color: "var(--accent)" }}>browse</span>
+            </p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-tertiary)" }}>
+              PDF, images, documents &middot; up to 10 MB
+            </p>
+          </div>
+        </div>
         <input
           ref={inputRef}
           type="file"
@@ -67,15 +83,35 @@ export default function FileUpload({
           disabled={isUploading}
         />
       </div>
+
       {isUploading && (
-        <div className="mt-2">
-          <div className="bg-gray-200 rounded-full h-2">
+        <div
+          className="animate-fade-in p-3"
+          style={{
+            background: "var(--accent-light)",
+            borderRadius: "var(--radius-md)",
+          }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium" style={{ color: "var(--accent)" }}>
+              Uploading...
+            </span>
+            <span className="text-xs font-medium" style={{ color: "var(--accent)" }}>
+              {progress}%
+            </span>
+          </div>
+          <div
+            className="h-1.5 rounded-full overflow-hidden"
+            style={{ background: "var(--accent-glow)" }}
+          >
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all"
-              style={{ width: `${progress}%` }}
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: `${progress}%`,
+                background: "var(--accent)",
+              }}
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">Uploading... {progress}%</p>
         </div>
       )}
     </div>

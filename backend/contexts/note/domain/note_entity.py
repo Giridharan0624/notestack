@@ -8,20 +8,40 @@ class Note(BaseModel):
     note_id: str = Field(default_factory=generate_id)
     title: str
     content: str = ""
+    description: str = ""
+    subject: str = ""
+    visibility: str = "private"
+    author_display_name: str = ""
     created_at: str = Field(default_factory=now_iso)
     updated_at: str = Field(default_factory=now_iso)
 
     def to_dynamo_item(self) -> dict:
-        return {
+        item = {
             "pk": f"USER#{self.user_id}",
             "sk": f"NOTE#{self.note_id}",
             "user_id": self.user_id,
             "note_id": self.note_id,
             "title": self.title,
             "content": self.content,
+            "description": self.description,
+            "subject": self.subject,
+            "visibility": self.visibility,
+            "author_display_name": self.author_display_name,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "entity_type": "NOTE",
+        }
+        if self.visibility == "public":
+            item["gsi2pk"] = "FEED#PUBLIC"
+            item["gsi2sk"] = f"{self.created_at}#{self.note_id}"
+        return item
+
+    def to_lookup_item(self) -> dict:
+        return {
+            "pk": f"NOTE#{self.note_id}",
+            "sk": "LOOKUP",
+            "user_id": self.user_id,
+            "entity_type": "NOTE_LOOKUP",
         }
 
     @classmethod
@@ -31,6 +51,10 @@ class Note(BaseModel):
             note_id=item["note_id"],
             title=item["title"],
             content=item.get("content", ""),
+            description=item.get("description", ""),
+            subject=item.get("subject", ""),
+            visibility=item.get("visibility", "private"),
+            author_display_name=item.get("author_display_name", ""),
             created_at=item["created_at"],
             updated_at=item["updated_at"],
         )
@@ -41,6 +65,10 @@ class Note(BaseModel):
             "userId": self.user_id,
             "title": self.title,
             "content": self.content,
+            "description": self.description,
+            "subject": self.subject,
+            "visibility": self.visibility,
+            "authorDisplayName": self.author_display_name,
             "createdAt": self.created_at,
             "updatedAt": self.updated_at,
         }
