@@ -25,10 +25,10 @@ export default function ProfilePage() {
   }, [userId]);
 
   useEffect(() => {
-    if (isAuthenticated && notes.length) {
+    if (isAuthenticated && !loading) {
       loadStatus(notes.map(n => n.noteId), [userId]);
     }
-  }, [isAuthenticated, notes, userId, loadStatus]);
+  }, [isAuthenticated, loading, notes, userId, loadStatus]);
 
   const pinnedNotes = notes.filter(n => n.pinned);
   const regularNotes = notes.filter(n => !n.pinned);
