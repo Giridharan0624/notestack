@@ -5,28 +5,35 @@ import PublicNoteCard from "@/components/PublicNoteCard"; import Button from "@/
 import ShareModal from "@/components/ShareModal";
 import { profileApi, feedApi } from "@/lib/api"; import { UserProfile, UserStats, Note } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext"; import { useSocial } from "@/hooks/useSocial";
-import { useNotes } from "@/hooks/useNotes";
 
 const GS = ["var(--g1)","var(--g2)","var(--g3)","var(--g4)","var(--g5)","var(--g6)","var(--g7)","var(--g8)"];
 function pick(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = ((h<<5)-h+s.charCodeAt(i))|0; return GS[Math.abs(h)%GS.length]; }
 
 export default function MyProfilePage() {
   const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [profile, setProfile] = useState<UserProfile|null>(null);
   const [stats, setStats] = useState<UserStats|null>(null);
   const [publicNotes, setPublicNotes] = useState<Note[]>([]);
-  const { notes: allNotes } = useNotes();
+  const [allNotes, setAllNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
   const [tab, setTab] = useState<"public"|"all">("all");
   const [shareNoteId, setShareNoteId] = useState<string|null>(null);
 
   useEffect(() => {
-    profileApi.getOwn().then(async (p) => {
+    if (authLoading || !isAuthenticated) return;
+    Promise.all([
+      profileApi.getOwn(),
+      import("@/lib/api").then(m => m.notesApi.list()),
+    ]).then(async ([p, notes]) => {
       setProfile(p);
+      setAllNotes(notes);
       const [s, n] = await Promise.all([profileApi.getStats(p.userId), feedApi.userNotes(p.userId)]);
       setStats(s); setPublicNotes(n.notes);
-    }).finally(() => setLoading(false));
-  }, []);
+    }).catch(e => setErr(e instanceof Error ? e.message : "Failed to load profile"))
+    .finally(() => setLoading(false));
+  }, [authLoading, isAuthenticated]);
 
   const pinnedNotes = allNotes.filter(n => n.pinned);
   const displayNotes = tab === "all" ? allNotes : publicNotes;
@@ -34,7 +41,7 @@ export default function MyProfilePage() {
   return (
     <ProtectedRoute><Header />
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-10">
-        {loading || !profile ? <Spinner className="mt-16" /> : (
+        {err ? <p className="text-[14px] mt-16 text-center" style={{ color: "var(--red)" }}>{err}</p> : loading || !profile ? <Spinner className="mt-16" /> : (
           <div className="up">
             {/* Banner */}
             <div className="h-36 rounded-t-[var(--r)] relative" style={{ background: pick(profile.userId) }} />
