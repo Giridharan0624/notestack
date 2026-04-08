@@ -38,7 +38,7 @@ export default function LoginPage() {
             <span className="text-[18px] font-bold">NoteStack</span>
           </div>
           <AuthForm title="Welcome back" subtitle="Sign in to your account" submitLabel="Sign in"
-            onSubmit={async (e, p) => { await login(e, p); router.push("/dashboard"); }}
+            onSubmit={async (e, p) => { await login(e, p); router.replace("/dashboard"); }}
             footer={
               <div className="space-y-3 pt-1">
                 <p className="text-[13px] text-center" style={{ color: "var(--fg3)" }}>

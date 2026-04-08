@@ -42,7 +42,7 @@ export default function EditProfilePage() {
       const links: Record<string, string> = {};
       if (linkedin) links.linkedin = linkedin; if (github) links.github = github; if (instagram) links.instagram = instagram;
       await updateProfile({ username, displayName: name, university: uni, bio, yearOfStudy: year, major, socialLinks: links });
-      setSaved(true); setTimeout(() => setSaved(false), 2000);
+      router.push("/profile");
     } catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
     finally { setSaving(false); }
   };
