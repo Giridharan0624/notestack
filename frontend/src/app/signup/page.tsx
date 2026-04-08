@@ -24,14 +24,9 @@ export default function SignupPage() {
           <h2 className="text-[36px] font-extrabold text-white leading-[1.15] tracking-tight mb-4">
             Share notes.<br/>Learn together.
           </h2>
-          <p className="text-[15px] text-white/60 leading-relaxed max-w-xs mb-8">
+          <p className="text-[15px] text-white/60 leading-relaxed max-w-xs">
             Join a growing community of students sharing study materials, forming study groups, and helping each other excel.
           </p>
-          <div className="flex gap-8">
-            <div><p className="text-[28px] font-extrabold text-white">1K+</p><p className="text-[12px] text-white/40 font-medium">Students</p></div>
-            <div><p className="text-[28px] font-extrabold text-white">5K+</p><p className="text-[12px] text-white/40 font-medium">Notes</p></div>
-            <div><p className="text-[28px] font-extrabold text-white">200+</p><p className="text-[12px] text-white/40 font-medium">Groups</p></div>
-          </div>
         </div>
       </div>
 
