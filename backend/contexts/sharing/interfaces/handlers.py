@@ -2,6 +2,7 @@ from contexts.shared.interfaces.api_response import error_response, success_resp
 from contexts.shared.interfaces.middleware import lambda_handler
 from contexts.sharing.application.actions import (
     ShareNoteUseCase, GetNotificationsUseCase, MarkReadUseCase, GetUnreadCountUseCase,
+    GetSharedWithMeUseCase, ViewSharedNoteUseCase,
 )
 from contexts.sharing.infrastructure.dynamo_sharing_repository import DynamoSharingRepository
 
@@ -17,6 +18,8 @@ def handler(event, context):
         ("GET", "/me/notifications"): get_notifications,
         ("PUT", "/me/notifications/{shareId}/read"): mark_read,
         ("GET", "/me/notifications/unread-count"): get_unread_count,
+        ("GET", "/me/shared-with-me"): get_shared_with_me,
+        ("GET", "/me/shared-with-me/{noteId}"): view_shared_note,
     }
 
     handler_fn = routes.get((method, resource))
@@ -51,3 +54,15 @@ def mark_read(event, user_id, body, path_params, query_params):
 def get_unread_count(event, user_id, body, path_params, query_params):
     count = GetUnreadCountUseCase(repo).execute(user_id)
     return success_response({"count": count})
+
+
+@lambda_handler
+def get_shared_with_me(event, user_id, body, path_params, query_params):
+    notes = GetSharedWithMeUseCase(repo).execute(user_id)
+    return success_response({"notes": notes})
+
+
+@lambda_handler
+def view_shared_note(event, user_id, body, path_params, query_params):
+    note = ViewSharedNoteUseCase(repo).execute(user_id, path_params.get("noteId", ""))
+    return success_response(note)

@@ -83,3 +83,60 @@ class GetUnreadCountUseCase:
 
     def execute(self, user_id: str) -> int:
         return self.repo.count_unread(user_id)
+
+
+class GetSharedWithMeUseCase:
+    """Get all notes that have been shared with the user, with full note data."""
+    def __init__(self, repo: DynamoSharingRepository):
+        self.repo = repo
+
+    def execute(self, user_id: str) -> list[dict]:
+        items = self.repo.find_notifications(user_id, limit=100)
+        results = []
+        seen_notes = set()
+        for item in items:
+            note_id = item.get("note_id", "")
+            if note_id in seen_notes:
+                continue
+            seen_notes.add(note_id)
+            note_owner_id = item.get("note_owner_id", "")
+            note = self.repo.find_note(note_owner_id, note_id) if note_owner_id else None
+            if note:
+                from contexts.note.domain.note_entity import Note
+                n = Note.from_dynamo_item(note)
+                result = n.to_api_dict()
+                result["sharedBy"] = item.get("sender_name", "")
+                result["sharedAt"] = item.get("created_at", "")
+                results.append(result)
+        return results
+
+
+class ViewSharedNoteUseCase:
+    """View a note that was shared with you — works even for private notes."""
+    def __init__(self, repo: DynamoSharingRepository):
+        self.repo = repo
+
+    def execute(self, user_id: str, note_id: str) -> dict:
+        # Check if user has a share for this note
+        items = self.repo.find_notifications(user_id, limit=200)
+        has_share = any(i.get("note_id") == note_id for i in items)
+
+        if not has_share:
+            raise NotFoundError("Note not found or not shared with you")
+
+        # Find the note via lookup or from share data
+        share_item = next((i for i in items if i.get("note_id") == note_id), None)
+        note_owner_id = share_item.get("note_owner_id", "") if share_item else ""
+
+        if not note_owner_id:
+            lookup = self.repo.find_note_lookup(note_id)
+            if not lookup:
+                raise NotFoundError("Note not found")
+            note_owner_id = lookup["user_id"]
+
+        note = self.repo.find_note(note_owner_id, note_id)
+        if not note:
+            raise NotFoundError("Note not found")
+
+        from contexts.note.domain.note_entity import Note
+        return Note.from_dynamo_item(note).to_api_dict()

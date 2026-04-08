@@ -58,7 +58,7 @@ export default function NotificationBell() {
             {notifs.length === 0 ? (
               <p className="text-[13px] py-8 text-center" style={{ color: "var(--fg4)" }}>No notifications</p>
             ) : notifs.map(n => (
-              <Link key={n.shareId} href={`/feed/notes/${n.noteId}`} onClick={() => { markRead(n); setOpen(false); }}
+              <Link key={n.shareId} href={`/shared/${n.noteId}`} onClick={() => { markRead(n); setOpen(false); }}
                 className="block px-4 py-3 hover:bg-[var(--hover)] transition-colors border-b border-[var(--border)] last:border-0"
                 style={{ background: n.read ? "transparent" : "rgba(79,110,247,0.03)" }}>
                 <p className="text-[13px]"><strong>{n.senderName}</strong> shared <strong>&ldquo;{n.noteTitle}&rdquo;</strong></p>

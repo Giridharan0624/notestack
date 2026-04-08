@@ -95,7 +95,7 @@ def search_users(event, user_id, body, path_params, query_params):
     q = query_params.get("q", "").strip()
     if not q or len(q) < 2:
         return success_response({"users": []})
-    profiles = repo.search_by_name(q)
+    profiles = repo.search(q)
     return success_response({"users": [
         {"userId": p.user_id, "displayName": p.display_name, "avatarUrl": p.avatar_url, "username": p.username}
         for p in profiles

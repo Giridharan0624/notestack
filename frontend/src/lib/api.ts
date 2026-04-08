@@ -34,6 +34,9 @@ export const notesApi = {
 export const feedApi = {
   list: (cursor?: string, limit = 20) => publicRequest<PaginatedNotes>(`/feed?limit=${limit}${cursor ? `&cursor=${cursor}` : ""}`),
   getNote: (id: string) => publicRequest<Note>(`/feed/notes/${id}`),
+  getAttachments: (noteId: string) => publicRequest<Attachment[]>(`/feed/notes/${noteId}/attachments`),
+  getDownloadUrl: (noteId: string, attachmentId: string) =>
+    publicRequest<{ downloadUrl: string; fileName: string }>(`/feed/notes/${noteId}/attachments/${attachmentId}/download`),
   userNotes: (uid: string, cursor?: string, limit = 20) => publicRequest<PaginatedNotes>(`/users/${uid}/notes?limit=${limit}${cursor ? `&cursor=${cursor}` : ""}`),
 };
 
@@ -57,6 +60,8 @@ export const sharingApi = {
   getNotifications: () => request<{ notifications: ShareNotification[] }>("/me/notifications"),
   markRead: (shareId: string) => request<{ message: string }>(`/me/notifications/${shareId}/read`, { method: "PUT" }),
   getUnreadCount: () => request<{ count: number }>("/me/notifications/unread-count"),
+  getSharedWithMe: () => request<{ notes: (Note & { sharedBy: string; sharedAt: string })[] }>("/me/shared-with-me"),
+  viewSharedNote: (noteId: string) => request<Note>(`/me/shared-with-me/${noteId}`),
 };
 
 // Groups

@@ -29,7 +29,7 @@ export default function AttachmentList({ attachments, onDelete, noteId }: { atta
             <p className="text-[14px] font-semibold truncate">{a.fileName}</p>
             <p className="text-[12px]" style={{ color: "var(--fg4)" }}>{fmtSize(a.fileSize)}</p>
           </div>
-          <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-1.5">
             {noteId && (
               <button onClick={() => handleDownload(a)}
                 className="text-[12px] font-semibold px-3 py-1 rounded-[8px] cursor-pointer"

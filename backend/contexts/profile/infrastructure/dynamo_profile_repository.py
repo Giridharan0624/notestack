@@ -45,11 +45,26 @@ class DynamoProfileRepository(ProfileRepository):
             return None
         return self.find_by_user_id(item["user_id"])
 
-    def search_by_name(self, query: str, limit: int = 10) -> list[Profile]:
+    def search(self, query: str, limit: int = 10) -> list[Profile]:
         from boto3.dynamodb.conditions import Attr
+        q = query.lower()
+
+        # First try exact username match
+        exact = self.find_by_username(q)
+        results = [exact] if exact else []
+        seen = {exact.user_id} if exact else set()
+
+        # Then scan for display_name or username contains
         response = self.table.scan(
-            FilterExpression=Attr("entity_type").eq("PROFILE") & Attr("display_name").contains(query),
-            Limit=limit * 5,  # Over-fetch since scan reads before filtering
+            FilterExpression=Attr("entity_type").eq("PROFILE") & (
+                Attr("display_name").contains(query) | Attr("username").contains(q)
+            ),
+            Limit=limit * 5,
         )
-        profiles = [Profile.from_dynamo_item(i) for i in response.get("Items", [])]
-        return profiles[:limit]
+        for item in response.get("Items", []):
+            p = Profile.from_dynamo_item(item)
+            if p.user_id not in seen:
+                results.append(p)
+                seen.add(p.user_id)
+
+        return results[:limit]

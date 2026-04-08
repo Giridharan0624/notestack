@@ -1,56 +1,53 @@
 "use client";
-import { useEffect, useState } from "react"; import { useParams } from "next/navigation";
-import Header from "@/components/Header"; import PublicNoteCard from "@/components/PublicNoteCard"; import Button from "@/components/ui/Button"; import Spinner from "@/components/ui/Spinner";
+import { useEffect, useState } from "react"; import { useRouter } from "next/navigation";
+import Header from "@/components/Header"; import ProtectedRoute from "@/components/ProtectedRoute";
+import PublicNoteCard from "@/components/PublicNoteCard"; import Button from "@/components/ui/Button"; import Spinner from "@/components/ui/Spinner";
 import ShareModal from "@/components/ShareModal";
-import { profileApi, feedApi, socialApi } from "@/lib/api"; import { UserProfile, UserStats, Note } from "@/lib/types";
+import { profileApi, feedApi } from "@/lib/api"; import { UserProfile, UserStats, Note } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext"; import { useSocial } from "@/hooks/useSocial";
+import { useNotes } from "@/hooks/useNotes";
 
 const GS = ["var(--g1)","var(--g2)","var(--g3)","var(--g4)","var(--g5)","var(--g6)","var(--g7)","var(--g8)"];
 function pick(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = ((h<<5)-h+s.charCodeAt(i))|0; return GS[Math.abs(h)%GS.length]; }
 
-export default function ProfilePage() {
-  const { userId } = useParams() as { userId: string };
-  const { isAuthenticated } = useAuth();
+export default function MyProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile|null>(null);
   const [stats, setStats] = useState<UserStats|null>(null);
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [publicNotes, setPublicNotes] = useState<Note[]>([]);
+  const { notes: allNotes } = useNotes();
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"public"|"all">("all");
   const [shareNoteId, setShareNoteId] = useState<string|null>(null);
-  const { status, loadStatus, toggleFollow, toggleLike, toggleBookmark } = useSocial();
 
   useEffect(() => {
-    Promise.all([profileApi.get(userId), profileApi.getStats(userId), feedApi.userNotes(userId)])
-      .then(([p, s, n]) => { setProfile(p); setStats(s); setNotes(n.notes); })
-      .finally(() => setLoading(false));
-  }, [userId]);
+    profileApi.getOwn().then(async (p) => {
+      setProfile(p);
+      const [s, n] = await Promise.all([profileApi.getStats(p.userId), feedApi.userNotes(p.userId)]);
+      setStats(s); setPublicNotes(n.notes);
+    }).finally(() => setLoading(false));
+  }, []);
 
-  useEffect(() => {
-    if (isAuthenticated && notes.length) {
-      loadStatus(notes.map(n => n.noteId), [userId]);
-    }
-  }, [isAuthenticated, notes, userId, loadStatus]);
-
-  const pinnedNotes = notes.filter(n => n.pinned);
-  const regularNotes = notes.filter(n => !n.pinned);
+  const pinnedNotes = allNotes.filter(n => n.pinned);
+  const displayNotes = tab === "all" ? allNotes : publicNotes;
 
   return (
-    <><Header />
+    <ProtectedRoute><Header />
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-10">
-        {loading ? <Spinner className="mt-16" /> : profile ? (
+        {loading || !profile ? <Spinner className="mt-16" /> : (
           <div className="up">
-            {/* Banner + profile card */}
-            <div className="h-32 rounded-t-[var(--r)] relative" style={{ background: pick(profile.userId) }} />
+            {/* Banner */}
+            <div className="h-36 rounded-t-[var(--r)] relative" style={{ background: pick(profile.userId) }} />
             <div className="bg-white rounded-b-[var(--r)] border border-t-0 border-[var(--border)] px-6 pb-6 relative mb-6" style={{ boxShadow: "var(--shadow-sm)" }}>
-              <div className="h-20 w-20 rounded-full flex items-center justify-center text-[28px] font-extrabold text-white border-4 border-white absolute -top-10 overflow-hidden" style={{ background: pick(profile.userId) }}>
-                {profile.avatarUrl ? (
-                  <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  (profile.displayName||"S")[0].toUpperCase()
-                )}
+              <div className="h-24 w-24 rounded-full flex items-center justify-center text-[32px] font-extrabold text-white border-4 border-white absolute -top-12 overflow-hidden" style={{ background: pick(profile.userId) }}>
+                {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" /> : (profile.displayName||"S")[0].toUpperCase()}
               </div>
-              <div className="pt-14 flex items-start justify-between">
+              <div className="pt-16 flex items-start justify-between">
                 <div>
-                  <h1 className="text-[22px] font-extrabold tracking-tight">{profile.displayName || "Student"}</h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-[24px] font-extrabold tracking-tight">{profile.displayName || "Student"}</h1>
+                    {profile.username && <span className="text-[13px] font-medium" style={{ color: "var(--fg3)" }}>@{profile.username}</span>}
+                  </div>
                   <div className="flex flex-wrap items-center gap-2 mt-0.5">
                     {profile.university && <span className="text-[13px]" style={{ color: "var(--fg3)" }}>{profile.university}</span>}
                     {profile.major && <span className="text-[13px]" style={{ color: "var(--fg4)" }}>· {profile.major}</span>}
@@ -58,7 +55,6 @@ export default function ProfilePage() {
                   </div>
                   {profile.bio && <p className="text-[13px] mt-2 leading-relaxed max-w-lg" style={{ color: "var(--fg2)" }}>{profile.bio}</p>}
 
-                  {/* Social links */}
                   {Object.keys(profile.socialLinks || {}).length > 0 && (
                     <div className="flex gap-3 mt-2">
                       {profile.socialLinks.github && <a href={profile.socialLinks.github} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold" style={{ color: "var(--blue)" }}>GitHub ↗</a>}
@@ -74,15 +70,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {isAuthenticated && (
-                  <Button
-                    variant={status.follows[userId] ? "secondary" : "primary"}
-                    size="sm"
-                    onClick={() => toggleFollow(userId)}
-                  >
-                    {status.follows[userId] ? "Following" : "Follow"}
-                  </Button>
-                )}
+                <Button variant="secondary" onClick={() => router.push("/profile/edit")}>Edit Profile</Button>
               </div>
             </div>
 
@@ -112,38 +100,39 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Pinned notes */}
+            {/* Pinned */}
             {pinnedNotes.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-[14px] font-bold mb-3 flex items-center gap-1.5">📌 Pinned</h3>
+                <h3 className="text-[14px] font-bold mb-3">📌 Pinned</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {pinnedNotes.map((n, i) => (
-                    <PublicNoteCard key={n.noteId} note={n} index={i}
-                      liked={status.likes[n.noteId]} bookmarked={status.bookmarks[n.noteId]}
-                      onLike={() => toggleLike(n.noteId)} onBookmark={() => toggleBookmark(n.noteId)}
-                      onShare={isAuthenticated ? () => setShareNoteId(n.noteId) : undefined} />
-                  ))}
+                  {pinnedNotes.map((n, i) => <PublicNoteCard key={n.noteId} note={n} index={i} onShare={() => setShareNoteId(n.noteId)} />)}
                 </div>
               </div>
             )}
 
-            {/* All public notes */}
-            <h3 className="text-[14px] font-bold mb-3">Public Notes</h3>
-            {regularNotes.length === 0 && pinnedNotes.length === 0 ? (
-              <p className="text-[13px] py-10 text-center" style={{ color: "var(--fg4)" }}>No public notes yet</p>
-            ) : regularNotes.length === 0 ? null : (
+            {/* Tab switch */}
+            <div className="flex items-center gap-1 mb-4">
+              {(["all", "public"] as const).map(t => (
+                <button key={t} onClick={() => setTab(t)}
+                  className="text-[13px] font-semibold px-3 py-1.5 rounded-[var(--r-sm)] cursor-pointer transition-all capitalize"
+                  style={{ background: tab === t ? "var(--hover)" : "transparent", color: tab === t ? "var(--fg)" : "var(--fg3)" }}>
+                  {t === "all" ? `All Notes · ${allNotes.length}` : `Public · ${publicNotes.length}`}
+                </button>
+              ))}
+            </div>
+
+            {/* Notes grid */}
+            {displayNotes.length === 0 ? (
+              <p className="text-[13px] py-10 text-center" style={{ color: "var(--fg4)" }}>No notes yet</p>
+            ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {regularNotes.map((n, i) => (
-                  <PublicNoteCard key={n.noteId} note={n} index={i}
-                    liked={status.likes[n.noteId]} bookmarked={status.bookmarks[n.noteId]}
-                    onLike={() => toggleLike(n.noteId)} onBookmark={() => toggleBookmark(n.noteId)} />
-                ))}
+                {displayNotes.map((n, i) => <PublicNoteCard key={n.noteId} note={n} index={i} onShare={() => setShareNoteId(n.noteId)} />)}
               </div>
             )}
           </div>
-        ) : null}
+        )}
         {shareNoteId && <ShareModal isOpen={!!shareNoteId} onClose={() => setShareNoteId(null)} noteId={shareNoteId} />}
       </main>
-    </>
+    </ProtectedRoute>
   );
 }

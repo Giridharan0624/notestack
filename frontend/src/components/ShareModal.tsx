@@ -65,7 +65,7 @@ export default function ShareModal({ isOpen, onClose, noteId }: Props) {
 
           {tab === "user" ? (
             <>
-              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name..." autoFocus />
+              <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name or @username..." autoFocus />
               <div className="mt-3 max-h-48 overflow-y-auto space-y-1">
                 {results.map(u => (
                   <div key={u.userId} className="flex items-center gap-3 px-3 py-2 rounded-[var(--r-sm)] hover:bg-[var(--hover)] cursor-pointer transition-colors"
@@ -73,8 +73,11 @@ export default function ShareModal({ isOpen, onClose, noteId }: Props) {
                     <div className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: "var(--g1)" }}>
                       {(u.displayName || "S")[0].toUpperCase()}
                     </div>
-                    <span className="text-[13px] font-medium">{u.displayName}</span>
-                    {sending && <span className="text-[11px] ml-auto" style={{ color: "var(--fg4)" }}>Sending...</span>}
+                    <div className="min-w-0">
+                      <span className="text-[13px] font-medium block truncate">{u.displayName}</span>
+                      {u.userId && (u as any).username && <span className="text-[11px]" style={{ color: "var(--fg4)" }}>@{(u as any).username}</span>}
+                    </div>
+                    {sending && <span className="text-[11px] ml-auto shrink-0" style={{ color: "var(--fg4)" }}>Sending...</span>}
                   </div>
                 ))}
                 {query.length >= 2 && results.length === 0 && (

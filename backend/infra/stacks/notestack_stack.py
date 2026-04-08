@@ -219,6 +219,7 @@ class NoteStackStack(Stack):
         table.grant_read_write_data(sharing_fn)
         table.grant_read_write_data(groups_fn)
         table.grant_read_data(feed_fn)
+        bucket.grant_read(feed_fn)
         bucket.grant_put(profile_fn)
         bucket.grant_put(upload_fn)
         bucket.grant_read(attachment_fn)
@@ -291,6 +292,12 @@ class NoteStackStack(Stack):
 
         note_id_resource = notes_resource.add_resource("{id}")
         note_id_resource.add_method(
+            "GET",
+            apigw.LambdaIntegration(note_fn),
+            authorization_type=apigw.AuthorizationType.COGNITO,
+            authorizer=authorizer,
+        )
+        note_id_resource.add_method(
             "PUT",
             apigw.LambdaIntegration(note_fn),
             authorization_type=apigw.AuthorizationType.COGNITO,
@@ -350,6 +357,14 @@ class NoteStackStack(Stack):
         feed_notes_resource = feed_resource.add_resource("notes")
         feed_note_id_resource = feed_notes_resource.add_resource("{noteId}")
         feed_note_id_resource.add_method("GET", apigw.LambdaIntegration(feed_fn))
+
+        # Public attachments for feed notes (no auth)
+        feed_att_resource = feed_note_id_resource.add_resource("attachments")
+        feed_att_resource.add_method("GET", apigw.LambdaIntegration(feed_fn))
+
+        feed_att_id_resource = feed_att_resource.add_resource("{attachmentId}")
+        feed_att_download_resource = feed_att_id_resource.add_resource("download")
+        feed_att_download_resource.add_method("GET", apigw.LambdaIntegration(feed_fn))
 
         # Users routes (public — no authorizer)
         users_resource = api.root.add_resource("users")
@@ -440,6 +455,13 @@ class NoteStackStack(Stack):
         me_notif_id_resource = me_notifications_resource.add_resource("{shareId}")
         me_notif_read_resource = me_notif_id_resource.add_resource("read")
         me_notif_read_resource.add_method("PUT", apigw.LambdaIntegration(sharing_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        # Shared with me routes
+        me_shared_resource = me_resource.add_resource("shared-with-me")
+        me_shared_resource.add_method("GET", apigw.LambdaIntegration(sharing_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        me_shared_note_resource = me_shared_resource.add_resource("{noteId}")
+        me_shared_note_resource.add_method("GET", apigw.LambdaIntegration(sharing_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
 
         # User search (under /users)
         users_search_resource = users_resource.add_resource("search")

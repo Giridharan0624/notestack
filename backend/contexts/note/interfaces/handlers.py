@@ -19,6 +19,7 @@ def handler(event, context):
     routes = {
         ("POST", "/notes"): create_note,
         ("GET", "/notes"): get_notes,
+        ("GET", "/notes/{id}"): get_note,
         ("PUT", "/notes/{id}"): update_note,
         ("DELETE", "/notes/{id}"): delete_note,
     }
@@ -56,6 +57,14 @@ def get_notes(event, user_id, body, path_params, query_params):
     use_case = GetNotesUseCase(repo)
     notes = use_case.execute(user_id)
     return success_response([n.to_api_dict() for n in notes])
+
+
+@lambda_handler
+def get_note(event, user_id, body, path_params, query_params):
+    note_id = path_params.get("id")
+    use_case = GetNoteUseCase(repo)
+    note = use_case.execute(user_id, note_id)
+    return success_response(note.to_api_dict())
 
 
 @lambda_handler

@@ -83,6 +83,7 @@ export interface ShareNotification {
 
 export interface UserSearchResult {
   userId: string;
+  username: string;
   displayName: string;
   avatarUrl: string;
 }
