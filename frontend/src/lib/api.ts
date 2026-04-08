@@ -1,5 +1,5 @@
 import { getIdToken } from "./auth";
-import type { Note, Attachment, UploadUrlResponse, UserProfile, UserStats, PaginatedNotes, SocialStatus, BookmarkItem, ShareNotification, UserSearchResult, Group, GroupDetail } from "./types";
+import type { Note, Attachment, UploadUrlResponse, UserProfile, UserStats, PaginatedNotes, SocialStatus, BookmarkItem, ShareNotification, UserSearchResult, Group, GroupDetail, GroupInvite } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -69,10 +69,15 @@ export const groupsApi = {
   create: (name: string) => request<Group>("/groups", { method: "POST", body: JSON.stringify({ name }) }),
   listMine: () => request<{ groups: Group[] }>("/me/groups"),
   getDetail: (groupId: string) => request<GroupDetail>(`/groups/${groupId}`),
-  addMember: (groupId: string, userId: string) =>
-    request<{ message: string }>(`/groups/${groupId}/members`, { method: "POST", body: JSON.stringify({ userId }) }),
+  inviteUser: (groupId: string, userId: string) =>
+    request<{ message: string }>(`/groups/${groupId}/invite`, { method: "POST", body: JSON.stringify({ userId }) }),
+  acceptInvite: (groupId: string) =>
+    request<{ message: string }>(`/groups/${groupId}/accept`, { method: "POST" }),
+  declineInvite: (groupId: string) =>
+    request<{ message: string }>(`/groups/${groupId}/decline`, { method: "POST" }),
   removeMember: (groupId: string, userId: string) =>
     request<{ message: string }>(`/groups/${groupId}/members/${userId}`, { method: "DELETE" }),
+  getMyInvites: () => request<{ invites: GroupInvite[] }>("/me/invites"),
   shareNote: (groupId: string, noteId: string) =>
     request<{ message: string }>(`/groups/${groupId}/notes`, { method: "POST", body: JSON.stringify({ noteId }) }),
   deleteGroup: (groupId: string) => request<{ message: string }>(`/groups/${groupId}`, { method: "DELETE" }),

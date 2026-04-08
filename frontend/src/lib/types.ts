@@ -118,6 +118,14 @@ export interface GroupDetail {
   notes: GroupNote[];
 }
 
+export interface GroupInvite {
+  groupId: string;
+  groupName: string;
+  invitedBy: string;
+  invitedByName: string;
+  createdAt: string;
+}
+
 export interface ApiError {
   error: string;
 }

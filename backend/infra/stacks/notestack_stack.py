@@ -244,7 +244,7 @@ class NoteStackStack(Stack):
             "Api",
             rest_api_name="notestack-api",
             default_cors_preflight_options=apigw.CorsOptions(
-                allow_origins=apigw.Cors.ALL_ORIGINS,
+                allow_origins=["https://notestack-giri.vercel.app", "http://localhost:3000"],
                 allow_methods=apigw.Cors.ALL_METHODS,
                 allow_headers=["Content-Type", "Authorization"],
             ),
@@ -478,11 +478,21 @@ class NoteStackStack(Stack):
         group_id_resource.add_method("GET", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
         group_id_resource.add_method("DELETE", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
 
-        group_members_resource = group_id_resource.add_resource("members")
-        group_members_resource.add_method("POST", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+        group_invite_resource = group_id_resource.add_resource("invite")
+        group_invite_resource.add_method("POST", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
 
+        group_accept_resource = group_id_resource.add_resource("accept")
+        group_accept_resource.add_method("POST", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        group_decline_resource = group_id_resource.add_resource("decline")
+        group_decline_resource.add_method("POST", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        group_members_resource = group_id_resource.add_resource("members")
         group_member_id_resource = group_members_resource.add_resource("{userId}")
         group_member_id_resource.add_method("DELETE", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
+
+        me_invites_resource = me_resource.add_resource("invites")
+        me_invites_resource.add_method("GET", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
 
         group_notes_resource = group_id_resource.add_resource("notes")
         group_notes_resource.add_method("POST", apigw.LambdaIntegration(groups_fn), authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)

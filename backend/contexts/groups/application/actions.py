@@ -63,7 +63,7 @@ class ListMyGroupsUseCase:
                  "memberCount": int(g.get("member_count", 0)), "createdAt": g["created_at"]} for g in groups]
 
 
-class AddMemberUseCase:
+class InviteUserUseCase:
     def __init__(self, repo: DynamoGroupsRepository):
         self.repo = repo
 
@@ -75,12 +75,73 @@ class AddMemberUseCase:
         if self.repo.find_member(group_id, target_user_id):
             raise ValidationError("User is already a member")
 
-        profile = self.repo.find_profile(target_user_id)
+        if self.repo.find_invite(target_user_id, group_id):
+            raise ValidationError("Invite already sent")
+
+        group = self.repo.find_group(group_id)
+        caller_profile = self.repo.find_profile(caller_id)
+
+        from contexts.shared.domain.value_objects import now_iso
+        invite = {
+            "pk": f"USER#{target_user_id}",
+            "sk": f"INVITE#{group_id}",
+            "user_id": target_user_id,
+            "group_id": group_id,
+            "group_name": group.get("name", "") if group else "",
+            "invited_by": caller_id,
+            "invited_by_name": caller_profile.get("display_name", "Student") if caller_profile else "Student",
+            "created_at": now_iso(),
+            "entity_type": "GROUP_INVITE",
+        }
+        self.repo.save_invite(invite)
+
+
+class AcceptInviteUseCase:
+    def __init__(self, repo: DynamoGroupsRepository):
+        self.repo = repo
+
+    def execute(self, user_id: str, group_id: str) -> None:
+        invite = self.repo.find_invite(user_id, group_id)
+        if not invite:
+            raise NotFoundError("Invite not found")
+
+        if self.repo.find_member(group_id, user_id):
+            self.repo.delete_invite(user_id, group_id)
+            raise ValidationError("Already a member")
+
+        profile = self.repo.find_profile(user_id)
         display_name = profile.get("display_name", "Student") if profile else "Student"
 
-        member = GroupMember(group_id=group_id, user_id=target_user_id, display_name=display_name)
+        member = GroupMember(group_id=group_id, user_id=user_id, display_name=display_name)
         self.repo.save_member(member)
         self.repo.increment_member_count(group_id, 1)
+        self.repo.delete_invite(user_id, group_id)
+
+
+class DeclineInviteUseCase:
+    def __init__(self, repo: DynamoGroupsRepository):
+        self.repo = repo
+
+    def execute(self, user_id: str, group_id: str) -> None:
+        invite = self.repo.find_invite(user_id, group_id)
+        if not invite:
+            raise NotFoundError("Invite not found")
+        self.repo.delete_invite(user_id, group_id)
+
+
+class GetMyInvitesUseCase:
+    def __init__(self, repo: DynamoGroupsRepository):
+        self.repo = repo
+
+    def execute(self, user_id: str) -> list[dict]:
+        invites = self.repo.find_user_invites(user_id)
+        return [{
+            "groupId": i["group_id"],
+            "groupName": i.get("group_name", ""),
+            "invitedBy": i.get("invited_by", ""),
+            "invitedByName": i.get("invited_by_name", ""),
+            "createdAt": i.get("created_at", ""),
+        } for i in invites]
 
 
 class RemoveMemberUseCase:

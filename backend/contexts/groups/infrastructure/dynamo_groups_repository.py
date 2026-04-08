@@ -80,6 +80,23 @@ class DynamoGroupsRepository:
                 groups.append(group)
         return groups
 
+    # ── Invites ──
+    def save_invite(self, invite: dict) -> None:
+        self.table.put_item(Item=invite)
+
+    def find_invite(self, user_id: str, group_id: str) -> dict | None:
+        r = self.table.get_item(Key={"pk": f"USER#{user_id}", "sk": f"INVITE#{group_id}"})
+        return r.get("Item")
+
+    def delete_invite(self, user_id: str, group_id: str) -> None:
+        self.table.delete_item(Key={"pk": f"USER#{user_id}", "sk": f"INVITE#{group_id}"})
+
+    def find_user_invites(self, user_id: str) -> list[dict]:
+        r = self.table.query(
+            KeyConditionExpression=Key("pk").eq(f"USER#{user_id}") & Key("sk").begins_with("INVITE#"),
+        )
+        return r.get("Items", [])
+
     # ── Helpers ──
     def find_profile(self, user_id: str) -> dict | None:
         r = self.table.get_item(Key={"pk": f"USER#{user_id}", "sk": "PROFILE"})
